@@ -43,12 +43,14 @@
 }
 
 .field-container {
+    position: relative;
     display: inline-block;
     margin: 0 50px;
     width: 401px;
 }
 
 .title {
+    line-height: 50px;
     margin: 0 10px;
     text-align: center;
     color: #0460a1;
@@ -60,6 +62,33 @@
     height: 401px;
     border-top: 1px solid #d5d5d5;
     border-left: 1px solid #d5d5d5;
+}
+
+.fieldBlocker {
+    position: absolute;
+    display: block;
+    top: 50px;
+    left: 0;
+    width: 401px;
+    height: 401px;
+    border: 1px solid #d5d5d5;
+    background: #e2e2e2dd url(../images/animation.png) no-repeat;
+    background-position: center 80px;
+    background-size: 200px 200px;
+    animation: 2s linear 0s infinite alternate ship;    
+    
+}
+
+@keyframes ship { 
+    from { background-position: center 80px; } 
+    25% { background-position: center 85px; }
+    50% { background-position: center 80px; }
+    75% { background-position: center 85px; }
+    to { background-position: center 80px; } 
+}
+
+.hidden {
+    display: none;
 }
 
 .field__sector {
@@ -84,14 +113,40 @@
 
 .field__sector-ship {
     background: #0173c7;
+    border: 1px solid #0173c7;
 }
 
-.field__sector-miss, .field__sector-next {
+.field__sector-miss {
     background: url(../images/miss.png) no-repeat;
     background-position: top right;
+    animation: .5s linear 0s alternate miss;   
+}
+
+@keyframes miss { 
+    from { background-color: #e2e2e2; } 
+    to { background-color: #f9f9f9; }
+}
+
+.field__sector-miss:hover {
+    background: url(../images/miss.png) no-repeat;
+    background-position: top right;
+    
 }
 
 .field__sector-hit {
-    background: url(../images/hit.png) no-repeat;
+    border: 1px solid #0173c7;
+    background: #0173c7 url(../images/hit.png) no-repeat;
+    background-position: top right;
+    animation: .5s linear 0s alternate hit;   
+}
+
+@keyframes hit { 
+    from { background-color: #B96F73; border: 1px solid #B96F73; } 
+    to { background-color: #0173c7; border: 1px solid #0173c7; }
+}
+
+.field__sector-hit:hover {
+    border: 1px solid #0173c7;
+    background: #0173c7 url(../images/hit.png) no-repeat;
     background-position: top right;
 }
