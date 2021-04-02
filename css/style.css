@@ -117,7 +117,7 @@
 }
 
 .field__sector-miss {
-    background: url(../images/miss.png) no-repeat;
+    background: #f9f9f9 url(../images/miss.png) no-repeat;
     background-position: top right;
     animation: .5s linear 0s alternate miss;   
 }

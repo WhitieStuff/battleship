@@ -3,7 +3,7 @@
 /**
  * Корабли, участвующие в игре.
  */
-var ships = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
+let shipSizes = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
 
 /**
  * Возвращает сумму для суммирования членов массива.
@@ -16,50 +16,57 @@ let reducer = (sum, current) => sum + current
 /**
  * Статусы сектора.
  */
-var statuses = ["empty", "ship", "hit", "miss", "next"]
+let statuses = ["empty", "ship", "hit", "miss", "next"]
 
 /**
  * Элемент поля противника.
- */
-var node_field_enemy = document.getElementById('fieldEnemy')
-/**
  * Элемент своего поля.
  */
-var node_field_me = document.getElementById('fieldMe')
+let node_fields = {
+    enemy: document.getElementById('fieldEnemy'),
+    me: document.getElementById('fieldMe')
+}
 
 /**
  * Элемент блока поля противника.
  */
-var node_fieldBlocker = document.getElementById('fieldBlocker')
+let node_fieldBlocker = document.getElementById('fieldBlocker')
 
 /**
  * Элемент кнопки "Новая игра".
  */
-var node_newGame = document.getElementById('newGame')
+let node_newGame = document.getElementById('newGame')
+
 
 /**
  * Объект с секторами поля противника.
- */
-var field_enemy = {ships: ships.reduce(reducer)}
-/**
  * Объект с секторами своего поля.
  */
-var field_me = {ships: ships.reduce(reducer)}
+let fields = {
+    enemy: {shipSectors: shipSizes.reduce(reducer)},
+    me: {shipSectors: shipSizes.reduce(reducer)}
+}
+
+/**
+ * Корабли противника, оставшиеся в текущей игре.
+  * Свои корабли, оставшиеся в текущей игре.
+ */
+let shipsLost = {
+    enemy: {4:1, 3:2, 2:3, 1:4},
+    me: {4:1, 3:2, 2:3, 1:4}
+}
 
 /**
  * Флаг своего хода.
  */
 var myMove
 
-/**
- * Последнее попадание соперника.
- */
-var lastHits = []
+var getRandom = () => Math.floor(Math.random() * Math.floor(9))
 
 /**
- * Свои корабли, оставшиеся в текущей игре.
+ * Последнее попадание противника.
  */
- var myShips = {4:1, 3:2, 2:3, 1:4}
+ var lastHit = null
 
 
 
@@ -74,13 +81,15 @@ var lastHits = []
 function newGame() {
     run0to100(refreshSector, 'me')
     run0to100(refreshSector, 'enemy')
-    ships.forEach(ship => {
+    shipSizes.forEach(ship => {
         createShip(ship, 'me')
         createShip(ship, 'enemy')
     })
-    field_enemy.shipSectors = ships.reduce(reducer)
-    field_me.shipSectors = ships.reduce(reducer)
-    myShips = {4:1, 3:2, 2:3, 1:4}
+    fields.enemy.shipSectors = shipSizes.reduce(reducer)
+    fields.me.shipSectors = shipSizes.reduce(reducer)
+    shipsLost.enemy = {4:1, 3:2, 2:3, 1:4}
+    shipsLost.me = {4:1, 3:2, 2:3, 1:4}
+    lastHit = null
 
     myMove = true
 
@@ -120,8 +129,8 @@ function run0to100 (callback, extraParameter) {
 function refreshSector(i, j, owner) {
     if (document.getElementById(`${owner}-${i}-${j}`)) document.getElementById(`${owner}-${i}-${j}`).parentNode.removeChild(document.getElementById(`${owner}-${i}-${j}`))
 
-    let field = window[`field_${owner}`]
-    let node = window[`node_field_${owner}`]
+    let field = fields[owner]
+    let node = node_fields[owner]
     let newSector = document.createElement('div')
     newSector.classList.add('field__sector')
     newSector.classList.add(`field__sector-${owner}`)
@@ -140,11 +149,11 @@ function refreshSector(i, j, owner) {
  * @param {*} owner Владелец поля (me/enemy).
  */
 function createShip(size, owner) {
-    let field = window[`field_${owner}`]
+    let field = fields[owner]
     
     let horizontal = Math.round(Math.random())
-    let x = Math.floor(Math.random() * Math.floor(9))
-    let y = Math.floor(Math.random() * Math.floor(9))
+    let x = getRandom()
+    let y = getRandom()
 
     // Первая проходка по гипотетическому кораблю. Если не умещается, начинаем по новой.
     for (let i = 0; i < size; i++) {
@@ -178,7 +187,7 @@ function createShip(size, owner) {
  * @param {number} status Статус сектора.
  */
 function markSector (x, y, owner, status) {
-    let field = window[`field_${owner}`]
+    let field = fields[owner]
     let sector = document.getElementById(`${owner}-${x}-${y}`)
 
     field[x][y].status = status
@@ -203,38 +212,39 @@ function shoot(event, owner) {
     let id = event.target.id
     let x = id.split('-')[1]
     let y = id.split('-')[2]
-    let field = window[`field_${owner}`]
+    let field = fields[owner]
 
-    if (!myMove && field[x][y].opened) return enemyMove()
+
     if (field[x][y].opened) return
     field[x][y].opened = 1
     
     if (field[x][y].status == 0 || field[x][y].status == 4) {
         markSector(x, y, owner, 3)
         myMove = !myMove
-        if (!myMove) enemyMove()
+        if (!myMove && lastHit) return checkDone(lastHit.x, lastHit.y, 'me')
+        if (!myMove) return shootRandom()
     }
 
     if (field[x][y].status == 1) {
         markSector(x, y, owner, 2)
-        if (--field.shipSectors == 0) endGame(owner)
-        if (!myMove) {
-            lastHits.push({x, y})
-            return enemyMove()
-        }
+        if (--field.shipSectors == 0) return endGame(owner)
+        if (!myMove) lastHit = {x, y}
+        return checkDone(x, y, owner)
     }
 }
 
 /**
- * Противник делает ход.
+ * Противник делает ход по заданным координатам.
+ * 
+ * @param {number} x Координата X.
+ * @param {number} y Координата Y.
  */
-function enemyMove() {
+function enemyMove(x, y) {
     node_fieldBlocker.classList.remove('hidden')
     setTimeout(() => {
         node_fieldBlocker.classList.add('hidden')
         let event = {}
-        let coordinates = getCoordinates()
-        event.target = document.getElementById(`me-${coordinates.x}-${coordinates.y}`)
+        event.target = document.getElementById(`me-${x}-${y}`)
         shoot(event, 'me')
     }, 800)
     
@@ -244,30 +254,208 @@ function enemyMove() {
 /**
  * Вычисляет следующий ход противника.
  */
-function getCoordinates() {
-    let x = Math.floor(Math.random() * Math.floor(9))
-    let y = Math.floor(Math.random() * Math.floor(9))
-    if (!lastHits.length) return {x, y}
+function shootRandom() {
+    let field = fields.me
+    let x = getRandom()
+    let y = getRandom()
+    if (field[x][y].opened) return shootRandom()
+    enemyMove(x, y)
+}
 
-    let lastHit = lastHits[lastHits.length-1]
-    let lastX = parseInt(lastHit.x)
-    let lastY = parseInt(lastHit.y)
+/**
+ * Проверяет, добит ли корабль последним попаданием.
+ * 
+ * @param {number} x Координата X.
+ * @param {number} y Координата Y.
+ * @param {string} owner Владелец поля (me/enemy).
+ * @returns {boolean} Добит ли корабль.
+ */
+function checkDone(oldX, oldY, owner) {
+    let field = fields[owner]
+    let ships = shipsLost[owner]
 
-    if (!myShips[lastHits.length + 1] && !myShips[lastHits.length + 2] && !myShips[lastHits.length + 3]) {
-        // Если не осталось кораблей длинней уже подбитого, то идем дальше.
-        myShips[lastHits.length]--
-        //TODO: Окружить корабль пустыми секторами.
-        lastHits = []
-        return {x, y}
+    /**
+     * Неизвестен ли сектор с заданными координатами.
+     */
+    let isUnknown = (x, y) => field[x] && field[x][y] && !field[x][y].opened
+    /**
+     * Является ли заданный сектор подбитым кораблем.
+     */
+    let isHit = (x, y) => field[x] && field[x][y] && field[x][y].status == 2
+    /**
+     * Является ли заданный корабль самым большим из оставшихся.
+     */
+    let isBiggest = (size) => {
+        if (size == 4) return true
+        for (let i = size + 1; i <= 4; i++) {
+            if (ships[i] > 0) console.log('not biggest')
+            if (ships[i] > 0) return false
+        }
+        return true
     }
-    //Если остался корабль длинней, вычисляем следующий ход.
-    if (lastHits.length == 1) {
-        if (field_me[lastX + 1][lastY] && !field_me[lastX + 1][lastY].opened) return {x: lastX + 1, y: lastY}
+
+    let makeDone = () => {
+        //TODO: Добавить проверку по уже отстреленным кораблям. Убил четверку - тройки обводятся.
+        isDone = true
+        lastHit = null
+        ships[length] = ships[length] - 1
+        markDone(oldX, oldY, owner)
     }
 
+    /** Длина уже подбитой части */
+    let length = 1
+
+    let horizontal, doneRight, doneLeft = false
+    let vertical, doneUp, doneDown = false
+    let isDone = false
+
+    oldX = parseInt(oldX)
+    oldY = parseInt(oldY)
+    let newX = 11
+    let newY = 11
+
+
+    let goRight = (x, y) => {
+        x++
+        if (isHit(x, y)) {
+            length++
+            horizontal = true
+            return goRight(x, y)
+        } else {
+            if (isUnknown(x, y)) {
+                newX = x
+                newY = y
+            } else {
+                doneRight = true
+            }
+            return goLeft(oldX, oldY)
+        }
+    }
+
+    let goLeft = (x, y) => {
+        x--
+        if (isHit(x, y)) {
+            length++
+            horizontal = true
+            return goLeft(x, y)
+        } else {
+            if (isUnknown(x, y)) {
+                newX = x
+                newY = y
+            } else {
+                doneLeft = true
+            }
+            if (!horizontal) return goUp(oldX, oldY)
+        }
+    }
+
+    let goUp = (x, y) => {
+        y--
+        if (isHit(x, y)) {
+            length++
+            vertical = true
+            return goUp(x, y)
+        } else {
+            if (isUnknown(x, y)) {
+                newX = x
+                newY = y
+            } else {
+                doneUp = true
+            }
+            return goDown(oldX, oldY)
+        }
+    }
+
+    let goDown = (x, y) => {
+        y++
+        if (isHit(x, y)) {
+            length++
+            vertical = true
+            return goDown(x, y)
+        } else {
+            if (isUnknown(x, y)) {
+                newX = x
+                newY = y
+            } else {
+                doneDown = true
+            }
+        }
+    }
+
+    goRight(oldX, oldY)
+
+    if (isBiggest(length) || horizontal && doneRight && doneLeft || vertical && doneUp && doneDown || doneRight && doneLeft && doneUp && doneDown) {
+        makeDone()
+    }
+
+    console.log("Корабль убит?", isDone)
+
+    if (owner == 'me') {
+        if (newX == 11) return shootRandom()
+        enemyMove(newX, newY)
+    }
     
+}
 
-    return {x, y}
+/**
+ * Помечает данный корабль убитым. Обводит его.
+ * 
+ * @param {number} oldX Координата X.
+ * @param {number} oldY Координа Y.
+ * @param {boolean} owner Владелец поля (me/enemy).
+ */
+function markDone(oldX, oldY, owner) {
+    let field = fields[owner]
+    let ships = shipsLost[owner]
+    oldX = parseInt(oldX)
+    oldY = parseInt(oldY)
+    let isHit = (x, y) => field[x] && field[x][y] && field[x][y].status == 2
+    let isUnknown = (x, y) => field[x] && field[x][y] && !field[x][y].opened
+
+    let getAround = (x, y) => {
+        for (let i = x - 1; i <= x + 1; i++) for (let j = y - 1; j <= y + 1; j++) if (isUnknown(i, j)) markSector(i, j, owner, 3)
+    }
+
+    let goRight = (x, y) => {
+        x++
+        if (isHit(x, y)) {
+            getAround(x, y)
+            goRight(x, y)
+        } else {
+            goLeft(oldX, oldY)
+        }
+    }
+
+    let goLeft = (x, y) => {
+        x--
+        if (isHit(x, y)) {
+            getAround(x, y)
+            goLeft(x, y)
+        } else {
+            goUp(oldX, oldY)
+        }
+    }
+
+    let goUp = (x, y) => {
+        y--
+        if (isHit(x, y)) {
+            getAround(x, y)
+            goUp(x, y)
+        } else {
+            goDown(oldX, oldY)
+        }
+    }
+
+    let goDown = (x, y) => {
+        y++
+        if (isHit(x, y)) {
+            getAround(x, y)
+            goDown(x, y)
+        }
+    }
+
+    getAround(oldX, oldY)
+    goRight(oldX, oldY)
 }
 
 /**
