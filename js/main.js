@@ -49,7 +49,7 @@ let fields = {
 
 /**
  * Корабли противника, оставшиеся в текущей игре.
-  * Свои корабли, оставшиеся в текущей игре.
+ * Свои корабли, оставшиеся в текущей игре.
  */
 let shipsLost = {
     enemy: {4:1, 3:2, 2:3, 1:4},
@@ -59,14 +59,18 @@ let shipsLost = {
 /**
  * Флаг своего хода.
  */
-var myMove
+let myMove
 
-var getRandom = () => Math.floor(Math.random() * Math.floor(9))
+let getRandom = () => Math.floor(Math.random() * Math.floor(9))
 
 /**
- * Последнее попадание противника.
+ * Последнее попадание по полю противника.
+ * Последнее попадание по моему полю.
  */
- var lastHit = null
+ let lastHits = {
+    enemy: null,
+    me: null
+ }
 
 
 
@@ -85,11 +89,9 @@ function newGame() {
         createShip(ship, 'me')
         createShip(ship, 'enemy')
     })
-    fields.enemy.shipSectors = shipSizes.reduce(reducer)
-    fields.me.shipSectors = shipSizes.reduce(reducer)
-    shipsLost.enemy = {4:1, 3:2, 2:3, 1:4}
-    shipsLost.me = {4:1, 3:2, 2:3, 1:4}
-    lastHit = null
+    fields.enemy.shipSectors = fields.me.shipSectors = shipSizes.reduce(reducer)
+    shipsLost.enemy = shipsLost.me = {4:1, 3:2, 2:3, 1:4}
+    lastHits.ememy = lastHits.me = null
 
     myMove = true
 
@@ -214,22 +216,28 @@ function shoot(event, owner) {
     let y = id.split('-')[2]
     let field = fields[owner]
 
+    console.log('')
+    console.log('Shoot at', owner, lastHits[owner])
+
 
     if (field[x][y].opened) return
     field[x][y].opened = 1
     
     if (field[x][y].status == 0 || field[x][y].status == 4) {
         markSector(x, y, owner, 3)
+        if (myMove && lastHits['enemy']) checkDone(lastHits['enemy'].x, lastHits['enemy'].y, 'enemy', false)
         myMove = !myMove
-        if (!myMove && lastHit) return checkDone(lastHit.x, lastHit.y, 'me')
+        console.log('Miss at', owner, lastHits[owner])
+        if (!myMove && lastHits['me']) return checkDone(lastHits['me'].x, lastHits['me'].y, 'me', true)
         if (!myMove) return shootRandom()
     }
 
     if (field[x][y].status == 1) {
         markSector(x, y, owner, 2)
+        lastHits[owner] = {x, y}
+        console.log('Hit at', owner, lastHits[owner])
         if (--field.shipSectors == 0) return endGame(owner)
-        if (!myMove) lastHit = {x, y}
-        return checkDone(x, y, owner)
+        return checkDone(x, y, owner, true)
     }
 }
 
@@ -255,6 +263,7 @@ function enemyMove(x, y) {
  * Вычисляет следующий ход противника.
  */
 function shootRandom() {
+    console.log('Shoot random')
     let field = fields.me
     let x = getRandom()
     let y = getRandom()
@@ -268,11 +277,11 @@ function shootRandom() {
  * @param {number} x Координата X.
  * @param {number} y Координата Y.
  * @param {string} owner Владелец поля (me/enemy).
+ * @param {boolean} makeHit Делать ли выстрел после проверки.
  * @returns {boolean} Добит ли корабль.
  */
-function checkDone(oldX, oldY, owner) {
+function checkDone(oldX, oldY, owner, makeHit) {
     let field = fields[owner]
-    let ships = shipsLost[owner]
 
     /**
      * Неизвестен ли сектор с заданными координатами.
@@ -288,8 +297,8 @@ function checkDone(oldX, oldY, owner) {
     let isBiggest = (size) => {
         if (size == 4) return true
         for (let i = size + 1; i <= 4; i++) {
-            if (ships[i] > 0) console.log('not biggest')
-            if (ships[i] > 0) return false
+            // if (shipsLost[owner][i] > 0) console.log('Не самый большой корабль')
+            if (shipsLost[owner][i] > 0) return false
         }
         return true
     }
@@ -297,16 +306,20 @@ function checkDone(oldX, oldY, owner) {
     let makeDone = () => {
         //TODO: Добавить проверку по уже отстреленным кораблям. Убил четверку - тройки обводятся.
         isDone = true
-        lastHit = null
-        ships[length] = ships[length] - 1
+        lastHits[owner] = null
+        shipsLost[owner][length] = shipsLost[owner][length] - 1
         markDone(oldX, oldY, owner)
     }
 
     /** Длина уже подбитой части */
     let length = 1
 
-    let horizontal, doneRight, doneLeft = false
-    let vertical, doneUp, doneDown = false
+    let horizontal = false
+    let doneRight = false
+    let doneLeft = false
+    let vertical = false
+    let doneUp = false
+    let doneDown = false
     let isDone = false
 
     oldX = parseInt(oldX)
@@ -390,7 +403,7 @@ function checkDone(oldX, oldY, owner) {
 
     console.log("Корабль убит?", isDone)
 
-    if (owner == 'me') {
+    if (makeHit) {
         if (newX == 11) return shootRandom()
         enemyMove(newX, newY)
     }
@@ -406,7 +419,6 @@ function checkDone(oldX, oldY, owner) {
  */
 function markDone(oldX, oldY, owner) {
     let field = fields[owner]
-    let ships = shipsLost[owner]
     oldX = parseInt(oldX)
     oldY = parseInt(oldY)
     let isHit = (x, y) => field[x] && field[x][y] && field[x][y].status == 2
