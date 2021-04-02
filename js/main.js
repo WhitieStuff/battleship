@@ -168,7 +168,7 @@ function createShip(size, owner) {
     for (let i = 0; i < size; i++) {
         let xi = horizontal ? x + i : x
         let yi = !horizontal ? y + i : y
-        markSector(xi, yi, owner, 1)
+        markSector(xi, yi, owner, 1, false)
     }
     
     // Проходка вокруг корабля, помечаем пустые секторы "соседними".
@@ -176,7 +176,7 @@ function createShip(size, owner) {
         let xi = horizontal ? x + i : x + j
         let yi = horizontal ? y + j : y + i
         if (xi > 9 || yi > 9 || xi < 0 || yi < 0 || field[xi][yi].status) continue; 
-        markSector(xi, yi, owner, 4)
+        markSector(xi, yi, owner, 4, false)
     }
 }
 
@@ -187,12 +187,14 @@ function createShip(size, owner) {
  * @param {number} y Координата Y.
  * @param {string} owner Владелец поля (me/enemy).
  * @param {number} status Статус сектора.
+ * @param {boolean} opened Открыт ли сектор.
  */
-function markSector (x, y, owner, status) {
+function markSector (x, y, owner, status, opened) {
     let field = fields[owner]
     let sector = document.getElementById(`${owner}-${x}-${y}`)
 
     field[x][y].status = status
+    field[x][y].opened = opened
 
     sector.classList.remove('field__sector-miss')
     sector.classList.remove('field__sector-ship')
@@ -217,27 +219,28 @@ function shoot(event, owner) {
     let field = fields[owner]
 
     console.log('')
-    console.log('Shoot at', owner, lastHits[owner])
+    console.log('Shot at', owner, x, y)
 
 
     if (field[x][y].opened) return
     field[x][y].opened = 1
     
     if (field[x][y].status == 0 || field[x][y].status == 4) {
-        markSector(x, y, owner, 3)
+        markSector(x, y, owner, 3, true)
         if (myMove && lastHits['enemy']) checkDone(lastHits['enemy'].x, lastHits['enemy'].y, 'enemy', false)
         myMove = !myMove
-        console.log('Miss at', owner, lastHits[owner])
+        console.log('Missed at', owner, x, y)
         if (!myMove && lastHits['me']) return checkDone(lastHits['me'].x, lastHits['me'].y, 'me', true)
         if (!myMove) return shootRandom()
     }
 
     if (field[x][y].status == 1) {
-        markSector(x, y, owner, 2)
+        markSector(x, y, owner, 2, true)
         lastHits[owner] = {x, y}
-        console.log('Hit at', owner, lastHits[owner])
+        console.log('Hit at', owner, x, y)
         if (--field.shipSectors == 0) return endGame(owner)
-        return checkDone(x, y, owner, true)
+        if (myMove) return checkDone(x, y, owner, false)
+        if (!myMove) return checkDone(x, y, owner, true)
     }
 }
 
@@ -304,10 +307,12 @@ function checkDone(oldX, oldY, owner, makeHit) {
     }
 
     let makeDone = () => {
+        //TODO: Это срабатывает на следующий ход, к тому времени бот уже успевает выстрелить в ненужный сектор и зависнуть.
         //TODO: Добавить проверку по уже отстреленным кораблям. Убил четверку - тройки обводятся.
         isDone = true
         lastHits[owner] = null
         shipsLost[owner][length] = shipsLost[owner][length] - 1
+        console.log('Making as done. Let\'s mark as done.')
         markDone(oldX, oldY, owner)
     }
 
@@ -390,20 +395,25 @@ function checkDone(oldX, oldY, owner, makeHit) {
                 newX = x
                 newY = y
             } else {
-                doneDown = true
+                console.log(x,y)
+                if (!isHit(x, y)) doneDown = true
             }
         }
     }
 
     goRight(oldX, oldY)
 
+    console.log('Let\'s check and make as done')
+    console.log('Length:', length, 'horizontal & vertical:', horizontal, vertical, 'right & left & up & down', doneRight, doneLeft, doneUp, doneDown)
+
     if (isBiggest(length) || horizontal && doneRight && doneLeft || vertical && doneUp && doneDown || doneRight && doneLeft && doneUp && doneDown) {
         makeDone()
     }
 
-    console.log("Корабль убит?", isDone)
+    console.log("The whole ship killed?", isDone)
 
     if (makeHit) {
+        console.log('Enemy shoots')
         if (newX == 11) return shootRandom()
         enemyMove(newX, newY)
     }
@@ -418,6 +428,7 @@ function checkDone(oldX, oldY, owner, makeHit) {
  * @param {boolean} owner Владелец поля (me/enemy).
  */
 function markDone(oldX, oldY, owner) {
+    console.log('Marking as done')
     let field = fields[owner]
     oldX = parseInt(oldX)
     oldY = parseInt(oldY)
@@ -425,7 +436,7 @@ function markDone(oldX, oldY, owner) {
     let isUnknown = (x, y) => field[x] && field[x][y] && !field[x][y].opened
 
     let getAround = (x, y) => {
-        for (let i = x - 1; i <= x + 1; i++) for (let j = y - 1; j <= y + 1; j++) if (isUnknown(i, j)) markSector(i, j, owner, 3)
+        for (let i = x - 1; i <= x + 1; i++) for (let j = y - 1; j <= y + 1; j++) if (isUnknown(i, j)) markSector(i, j, owner, 3, true)
     }
 
     let goRight = (x, y) => {
