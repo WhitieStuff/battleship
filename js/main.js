@@ -268,7 +268,6 @@ function enemyMove(x, y) {
  * Вычисляет следующий ход противника.
  */
 function shootRandom() {
-    console.log('\nShoot random')
     let field = fields.me
     let x = getRandom()
     let y = getRandom()
@@ -302,7 +301,6 @@ function checkDone(oldX, oldY, owner, makeHit) {
     let isBiggest = (size) => {
         if (size == 4) return true
         for (let i = size + 1; i <= 4; i++) {
-            // if (shipsLost[owner][i] > 0) console.log('Не самый большой корабль')
             if (shipsLost[owner][i] > 0) return false
         }
         return true
@@ -325,14 +323,11 @@ function checkDone(oldX, oldY, owner, makeHit) {
     let newY = 11
 
     let makeDone = () => {
-        //TODO: Это срабатывает на следующий ход, к тому времени бот уже успевает выстрелить в ненужный сектор и зависнуть.
-        //TODO: Добавить проверку по уже отстреленным кораблям. Убил четверку - тройки обводятся.
         isDone = true
         lastHits[owner] = null
         shipsLost[owner][length] = shipsLost[owner][length] - 1
         newX = 11
         newY = 11
-        console.log('Let\'s mark as done.')
         markDone(oldX, oldY, owner)
     }
 
@@ -399,16 +394,12 @@ function checkDone(oldX, oldY, owner, makeHit) {
                 newX = x
                 newY = y
             } else {
-                console.log('Last down',x,y)
                 if (!isHit(x, y)) doneDown = true
             }
         }
     }
 
     goRight(oldX, oldY)
-
-    console.log('Let\'s check for being done')
-    console.log('Length:', length, 'horizontal & vertical:', horizontal, vertical, 'right & left & up & down', doneRight, doneLeft, doneUp, doneDown)
 
     if (isBiggest(length) || horizontal && doneRight && doneLeft || vertical && doneUp && doneDown || doneRight && doneLeft && doneUp && doneDown) {
         makeDone()
