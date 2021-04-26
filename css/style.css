@@ -123,15 +123,13 @@
 }
 
 @keyframes miss { 
-    from { background-color: #c0c0c0; }  */
-    /* from { background-color: #6dcc6d; }  */
+    from { background-color: #c0c0c0; }
     to { background-color: #f9f9f9; }
 }
 
 .field__sector-miss:hover {
     background: url(../images/miss.png) no-repeat;
     background-position: top right;
-    
 }
 
 .field__sector-hit {
