@@ -123,8 +123,8 @@
 }
 
 @keyframes miss { 
-    /* from { background-color: #e2e2e2; }  */
-    from { background-color: red; } 
+    from { background-color: #c0c0c0; }  */
+    /* from { background-color: #6dcc6d; }  */
     to { background-color: #f9f9f9; }
 }
 

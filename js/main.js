@@ -200,11 +200,8 @@ function markSector (x, y, owner, status, opened) {
     sector.classList.remove('field__sector-ship')
     sector.classList.remove('field__sector-hit')
 
-    //TODO: Убрать пометку c классами на поле противника. 
-    // if (owner == 'enemy') return
+    if (owner == 'enemy' && statuses[status] == 'ship') return
     sector.classList.add(`field__sector-${statuses[status]}`)
-
-    
 }
 
 /**
@@ -217,27 +214,32 @@ function shoot(event, owner) {
     let x = id.split('-')[1]
     let y = id.split('-')[2]
     let field = fields[owner]
+    let sector = field[x][y]
+    // let color = owner == 'me' ? 'color: red;' : 'color: green;'
+    let color = owner == 'me' ? 'color: red;' : 'color: green;'
 
-    console.log('')
-    console.log('Shot at', owner, x, y)
+    console.log(`%c\nShot at ${owner}: ${x} ${y}`, color)
 
 
-    if (field[x][y].opened) return
-    field[x][y].opened = 1
+    if (sector.opened) return
+    sector.opened = 1
     
-    if (field[x][y].status == 0 || field[x][y].status == 4) {
+    if (sector.status == 0 || sector.status == 4) {
         markSector(x, y, owner, 3, true)
-        if (myMove && lastHits['enemy']) checkDone(lastHits['enemy'].x, lastHits['enemy'].y, 'enemy', false)
         myMove = !myMove
-        console.log('Missed at', owner, x, y)
+        console.log(`%cMissed at ${owner}: ${x} ${y}`, color)
+        if (!myMove && lastHits['enemy']) checkDone(lastHits['enemy'].x, lastHits['enemy'].y, 'enemy', false)
+        if (myMove && lastHits['me']) checkDone(lastHits['me'].x, lastHits['me'].y, 'me', false)
         if (!myMove && lastHits['me']) return checkDone(lastHits['me'].x, lastHits['me'].y, 'me', true)
         if (!myMove) return shootRandom()
     }
 
-    if (field[x][y].status == 1) {
+    if (sector.status == 1) {
         markSector(x, y, owner, 2, true)
         lastHits[owner] = {x, y}
-        console.log('Hit at', owner, x, y)
+        console.log(`%cHit at ${owner}: ${x} ${y}`, color)
+        console.log(`%cLast hit at enemy: `, color, lastHits['enemy'])
+        console.log(`%cLast hit at me: `, color, lastHits['me'])
         if (--field.shipSectors == 0) return endGame(owner)
         if (myMove) return checkDone(x, y, owner, false)
         if (!myMove) return checkDone(x, y, owner, true)
@@ -266,7 +268,7 @@ function enemyMove(x, y) {
  * Вычисляет следующий ход противника.
  */
 function shootRandom() {
-    console.log('Shoot random')
+    console.log('\nShoot random')
     let field = fields.me
     let x = getRandom()
     let y = getRandom()
@@ -306,16 +308,6 @@ function checkDone(oldX, oldY, owner, makeHit) {
         return true
     }
 
-    let makeDone = () => {
-        //TODO: Это срабатывает на следующий ход, к тому времени бот уже успевает выстрелить в ненужный сектор и зависнуть.
-        //TODO: Добавить проверку по уже отстреленным кораблям. Убил четверку - тройки обводятся.
-        isDone = true
-        lastHits[owner] = null
-        shipsLost[owner][length] = shipsLost[owner][length] - 1
-        console.log('Making as done. Let\'s mark as done.')
-        markDone(oldX, oldY, owner)
-    }
-
     /** Длина уже подбитой части */
     let length = 1
 
@@ -331,6 +323,18 @@ function checkDone(oldX, oldY, owner, makeHit) {
     oldY = parseInt(oldY)
     let newX = 11
     let newY = 11
+
+    let makeDone = () => {
+        //TODO: Это срабатывает на следующий ход, к тому времени бот уже успевает выстрелить в ненужный сектор и зависнуть.
+        //TODO: Добавить проверку по уже отстреленным кораблям. Убил четверку - тройки обводятся.
+        isDone = true
+        lastHits[owner] = null
+        shipsLost[owner][length] = shipsLost[owner][length] - 1
+        newX = 11
+        newY = 11
+        console.log('Let\'s mark as done.')
+        markDone(oldX, oldY, owner)
+    }
 
 
     let goRight = (x, y) => {
@@ -395,7 +399,7 @@ function checkDone(oldX, oldY, owner, makeHit) {
                 newX = x
                 newY = y
             } else {
-                console.log(x,y)
+                console.log('Last down',x,y)
                 if (!isHit(x, y)) doneDown = true
             }
         }
@@ -403,7 +407,7 @@ function checkDone(oldX, oldY, owner, makeHit) {
 
     goRight(oldX, oldY)
 
-    console.log('Let\'s check and make as done')
+    console.log('Let\'s check for being done')
     console.log('Length:', length, 'horizontal & vertical:', horizontal, vertical, 'right & left & up & down', doneRight, doneLeft, doneUp, doneDown)
 
     if (isBiggest(length) || horizontal && doneRight && doneLeft || vertical && doneUp && doneDown || doneRight && doneLeft && doneUp && doneDown) {
@@ -413,7 +417,7 @@ function checkDone(oldX, oldY, owner, makeHit) {
     console.log("The whole ship killed?", isDone)
 
     if (makeHit) {
-        console.log('Enemy shoots')
+        console.log('\nEnemy shoots')
         if (newX == 11) return shootRandom()
         enemyMove(newX, newY)
     }
