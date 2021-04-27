@@ -37,6 +37,26 @@ let node_fieldBlocker = document.getElementById('fieldBlocker')
  */
 let node_newGame = document.getElementById('newGame')
 
+/**
+ * Элемент блока при конце игры.
+ */
+ let node_endGame = document.getElementById('endGame')
+
+ /**
+  * Элемент сообщения о конце игры.
+  */
+ let node_endGameTitle = document.getElementById('endGameTitle')
+
+ /**
+  * Элемент сообщения о конце игры.
+  */
+ let node_endGameButton = document.getElementById('endGameButton')
+
+ node_endGameButton.addEventListener('click', event => {
+    event.target.classList.add('hidden')
+    node_endGameTitle.classList.add('hidden')
+ })
+
 
 /**
  * Объект с секторами поля противника.
@@ -109,6 +129,10 @@ function newGame() {
     for (let i = 0; i < 100; i++) {
         node_enemy_sectors[i].addEventListener('click', event => shoot(event, 'enemy'))
     }
+
+    node_endGame.classList.add('hidden')
+    node_endGameTitle.classList.add('hidden')
+    node_endGameButton.classList.add('hidden')
 
     console.log('%cНачата новая игра.', "color: green;")
 }
@@ -484,8 +508,16 @@ function markDone(oldX, oldY, owner) {
  * @param {string} owner Владелец поля (me/enemy) последнего убитого корабля.
  */
 function endGame(owner) {
-    if (owner == 'me') return console.log('Проигрыш')
-    console.log('Выигрыш')
+    node_endGame.classList.remove('hidden')
+    node_endGameTitle.classList.remove('hidden')
+    node_endGameButton.classList.remove('hidden')
+    if (owner == 'me') {
+        console.log('Проигрыш')
+        node_endGameTitle.innerText = 'Вы проиграли..'
+    } else {
+        console.log('Выигрыш')
+        node_endGameTitle.innerText = 'Вы выиграли!'
+    }
 }
 
 node_newGame.addEventListener('click', () => {

@@ -18,6 +18,7 @@
 }
 
 .main {
+    position: relative;
     margin: auto;
     width: max-content;
     min-width: 650px;
@@ -75,7 +76,7 @@
     background: #e2e2e2dd url(../images/animation.png) no-repeat;
     background-position: center 80px;
     background-size: 200px 200px;
-    animation: 2s linear 0s infinite alternate ship;    
+    animation: 2s linear 0s infinite alternate ship; 
     
 }
 
@@ -88,7 +89,7 @@
 }
 
 .hidden {
-    display: none;
+    visibility: hidden;
 }
 
 .field__sector {
@@ -149,3 +150,47 @@
     background: #0173c7 url(../images/hit.png) no-repeat;
     background-position: top right;
 }
+
+.endGame {
+    position: relative;
+    top: -450px;
+    height: 450px;
+    width: 100%;
+}
+
+.endGame__title {
+    position: relative;
+    margin: auto;
+    height: 100%;
+    width: 100%;
+    padding-top: 80px;
+    background: #fff;
+    color: #0173c7;
+    text-align: center;
+    font-size: 100px;
+}
+
+.endGame__button {
+    cursor: pointer;
+    position: relative;
+    top: -220px;
+    margin: auto;
+    width: max-content;
+    font-size: 20px;
+    color: #0173c7;
+}
+
+.endGame__button:hover {
+    color: #0460a1;
+    transform: scale(1.1);
+}
+
+.noselect {
+    -webkit-touch-callout: none; /* iOS Safari */
+      -webkit-user-select: none; /* Safari */
+       -khtml-user-select: none; /* Konqueror HTML */
+         -moz-user-select: none; /* Old versions of Firefox */
+          -ms-user-select: none; /* Internet Explorer/Edge */
+              user-select: none; /* Non-prefixed version, currently
+                                    supported by Chrome, Edge, Opera and Firefox */
+  }

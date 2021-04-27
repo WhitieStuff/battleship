@@ -9,7 +9,7 @@
     <title>Battleship</title>
 </head>
 <body id="body">
-    <main class="main" id="main">
+    <main class="main noselect" id="main">
         <button class="button" id="newGame">Новая игра</button>
         <div class="field-container">
             <h1 class="title">Поле противника</h1>
@@ -19,6 +19,10 @@
         <div class="field-container">
             <h1 class="title">Мое поле</h1>
             <div class="field fieldMe" id="fieldMe"></div>
+        </div>
+        <div class="endGame hidden" id="endGame">
+            <div class="endGame__title" id="endGameTitle">Вы проиграли</div>
+            <div class="endGame__button" id="endGameButton">Скрыть</div>
         </div>
     </main>
 
