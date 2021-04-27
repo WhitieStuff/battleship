@@ -89,9 +89,12 @@ function newGame() {
         createShip(ship, 'me')
         createShip(ship, 'enemy')
     })
-    fields.enemy.shipSectors = fields.me.shipSectors = shipSizes.reduce(reducer)
-    shipsLost.enemy = shipsLost.me = {4:1, 3:2, 2:3, 1:4}
-    lastHits.ememy = lastHits.me = null
+    fields.enemy.shipSectors = shipSizes.reduce(reducer)
+    fields.me.shipSectors = shipSizes.reduce(reducer)
+    shipsLost.enemy = {4:1, 3:2, 2:3, 1:4}
+    shipsLost.me = {4:1, 3:2, 2:3, 1:4}
+    lastHits.ememy = null
+    lastHits.me = null
 
     myMove = true
 
@@ -228,8 +231,8 @@ function shoot(event, owner) {
         markSector(x, y, owner, 3, true)
         myMove = !myMove
         console.log(`%cMissed at ${owner}: ${x} ${y}`, color)
-        if (!myMove && lastHits['enemy']) checkDone(lastHits['enemy'].x, lastHits['enemy'].y, 'enemy', false)
         if (myMove && lastHits['me']) checkDone(lastHits['me'].x, lastHits['me'].y, 'me', false)
+        if (!myMove && lastHits['enemy']) checkDone(lastHits['enemy'].x, lastHits['enemy'].y, 'enemy', false)
         if (!myMove && lastHits['me']) return checkDone(lastHits['me'].x, lastHits['me'].y, 'me', true)
         if (!myMove) return shootRandom()
     }
