@@ -1,26 +1,26 @@
-//0 - пусто, 1 - корабль, 2 - ранен, 3 - мимо, 4 - соседняя.
+//0 - empty, 1 - ship, 2 - hit, 3 - miss, 4 - next to the ship.
 
 /**
- * Корабли, участвующие в игре.
+ * Ships in the game.
  */
 let shipSizes = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
 
 /**
- * Возвращает сумму для суммирования членов массива.
- * @param {*} sum Сумма предыдущих членов.
- * @param {*} current Текущий член.
- * @returns Сумма значений.
+ * Returns a sum of the two given numbers.
+ * @param {*} sum Sum of previous numbers.
+ * @param {*} current Current number.
+ * @returns Sum of numbers.
  */
 let reducer = (sum, current) => sum + current
 
 /**
- * Статусы сектора.
+ * Possible statuses of a sector.
  */
 let statuses = ["empty", "ship", "hit", "miss", "next"]
 
 /**
- * Элемент поля противника.
- * Элемент своего поля.
+ * Node of the enemy's field.
+ * Node of your field.
  */
 let node_fields = {
     enemy: document.getElementById('fieldEnemy'),
@@ -28,27 +28,27 @@ let node_fields = {
 }
 
 /**
- * Элемент блока поля противника.
+ * Node of field blocker.
  */
 let node_fieldBlocker = document.getElementById('fieldBlocker')
 
 /**
- * Элемент кнопки "Новая игра".
+ * Node of "New Game" button.
  */
 let node_newGame = document.getElementById('newGame')
 
 /**
- * Элемент блока при конце игры.
+ * Node of end-game popup.
  */
  let node_endGame = document.getElementById('endGame')
 
  /**
-  * Элемент сообщения о конце игры.
+  * Node of end-game message title.
   */
  let node_endGameTitle = document.getElementById('endGameTitle')
 
  /**
-  * Элемент сообщения о конце игры.
+  * Node of end-game message.
   */
  let node_endGameButton = document.getElementById('endGameButton')
 
@@ -59,8 +59,8 @@ let node_newGame = document.getElementById('newGame')
 
 
 /**
- * Объект с секторами поля противника.
- * Объект с секторами своего поля.
+ * Enemy's sectors.
+ * Your sectors.
  */
 let fields = {
     enemy: {shipSectors: shipSizes.reduce(reducer)},
@@ -68,8 +68,8 @@ let fields = {
 }
 
 /**
- * Корабли противника, оставшиеся в текущей игре.
- * Свои корабли, оставшиеся в текущей игре.
+ * Enemy's ships lost in current game.
+ * Your ships lost in current game.
  */
 let shipsLost = {
     enemy: {4:1, 3:2, 2:3, 1:4},
@@ -77,30 +77,23 @@ let shipsLost = {
 }
 
 /**
- * Флаг своего хода.
+ * My-move flag.
  */
 let myMove
 
 let getRandom = () => Math.floor(Math.random() * Math.floor(9))
 
 /**
- * Последнее попадание по полю противника.
- * Последнее попадание по моему полю.
+ * Last hit at the enemy.
+ * Last hit at me.
  */
  let lastHits = {
     enemy: null,
     me: null
  }
 
-
-
-
-
-
-
-
 /**
- * Начинает новую игру и перерисовывает поля.
+ * Starts a new game and redraws the fields.
  */
 function newGame() {
     run0to100(refreshSector, 'me')
@@ -119,13 +112,9 @@ function newGame() {
     myMove = true
 
     /**
-     * Секторы противника для листенера кликов.
+     * Enemy's sectors for event listeners.
      */
     let node_enemy_sectors = document.getElementsByClassName('field__sector-enemy')
-    /**
-     * Свои секторы для листенера ходов противника.
-     */
-    let node_me_sectors = document.getElementsByClassName('field__sector-me')
     for (let i = 0; i < 100; i++) {
         node_enemy_sectors[i].addEventListener('click', event => shoot(event, 'enemy'))
     }
@@ -134,26 +123,27 @@ function newGame() {
     node_endGameTitle.classList.add('hidden')
     node_endGameButton.classList.add('hidden')
 
+    
     console.log('%cНачата новая игра.', "color: green;")
 }
 
 /**
- * Проходит по матрице 10х10 и вызывает коллбэк для каждого сектора.
+ * Runs the 10x10 matrix and calls a callback function for each sector.
  * 
- * @param {function} callback Коллбэк, который будет вызван для каждого сектора поля.
- * @param {*} extraParameter Дополнительные параметры для вызова коллбэка.
+ * @param {function} callback Callback for each sector.
+ * @param {*} owner Field owner (me/enemy).
  */
-function run0to100 (callback, extraParameter) {
-    for (let i = 0; i < 10; i++) for (let j = 0; j < 10; j++) callback(j, i, extraParameter)
+function run0to100 (callback, owner) {
+    for (let i = 0; i < 10; i++) for (let j = 0; j < 10; j++) callback(j, i, owner)
 }
 
 
 /**
- * Очищает сектор и создает новый.
+ * Clears the given sector.
  * 
- * @param {number} i Координата X.
- * @param {number} j Координата Y.
- * @param {string} owner Владелец поля (me/enemy).
+ * @param {number} i Coordinate X.
+ * @param {number} j Coordinate Y.
+ * @param {string} owner Field owner (me/enemy).
  */
 function refreshSector(i, j, owner) {
     if (document.getElementById(`${owner}-${i}-${j}`)) document.getElementById(`${owner}-${i}-${j}`).parentNode.removeChild(document.getElementById(`${owner}-${i}-${j}`))
@@ -172,10 +162,10 @@ function refreshSector(i, j, owner) {
 }
 
 /**
- * Создает корабль заданного размера на указанном поле.
+ * Creates a ship of the given size on the given field.
  * 
- * @param {nubmer} size Размер корабля.
- * @param {*} owner Владелец поля (me/enemy).
+ * @param {nubmer} size Ship's size.
+ * @param {*} owner Field owner (me/enemy).
  */
 function createShip(size, owner) {
     let field = fields[owner]
@@ -184,21 +174,21 @@ function createShip(size, owner) {
     let x = getRandom()
     let y = getRandom()
 
-    // Первая проходка по гипотетическому кораблю. Если не умещается, начинаем по новой.
+    // The first run through the possible ship. Recalls the function if the ship doesn't fit.
     for (let i = 0; i < size; i++) {
         let xi = horizontal ? x + i : x
         let yi = !horizontal ? y + i : y
         if (xi > 9 || yi > 9 || field[xi][yi].status) return createShip(size, owner)
     }
     
-    // Вторая проходка по гипотетическому кораблю, помечаем секторы.
+    // The second run through the possible ship. Marks all sectors.
     for (let i = 0; i < size; i++) {
         let xi = horizontal ? x + i : x
         let yi = !horizontal ? y + i : y
         markSector(xi, yi, owner, 1, false)
     }
     
-    // Проходка вокруг корабля, помечаем пустые секторы "соседними".
+    // Runs around the ship and marks sectors as 'next to the ship'.
     for (let i = -1; i <= size; i++) for (let j = -1; j <= 1; j++) {
         let xi = horizontal ? x + i : x + j
         let yi = horizontal ? y + j : y + i
@@ -208,13 +198,13 @@ function createShip(size, owner) {
 }
 
 /**
- * Помечает указанный сектор на указанном поле указанным статусом.
+ * Marks the given sector as the given type.
  * 
- * @param {number} x Координата X.
- * @param {number} y Координата Y.
- * @param {string} owner Владелец поля (me/enemy).
- * @param {number} status Статус сектора.
- * @param {boolean} opened Открыт ли сектор.
+ * @param {number} x Coordinate X.
+ * @param {number} y Coordinate Y.
+ * @param {string} owner Field owner (me/enemy).
+ * @param {number} status The given status.
+ * @param {boolean} opened Is the sector open.
  */
 function markSector (x, y, owner, status, opened) {
     let field = fields[owner]
@@ -232,9 +222,9 @@ function markSector (x, y, owner, status, opened) {
 }
 
 /**
- * Выстрел по заданному сектору.
- * @param {event} event Ивент нажатия на сектор.
- * @param {string} owner Владелец поля (me/enemy).
+ * Hits the given sector.
+ * @param {event} event Event of the click.
+ * @param {string} owner Field owner (me/enemy).
  */
 function shoot(event, owner) {
     let id = event.target.id
@@ -242,7 +232,6 @@ function shoot(event, owner) {
     let y = id.split('-')[2]
     let field = fields[owner]
     let sector = field[x][y]
-    // let color = owner == 'me' ? 'color: red;' : 'color: green;'
     let color = owner == 'me' ? 'color: red;' : 'color: green;'
 
     console.log(`%c\nShot at ${owner}: ${x} ${y}`, color)
@@ -255,6 +244,7 @@ function shoot(event, owner) {
         markSector(x, y, owner, 3, true)
         myMove = !myMove
         console.log(`%cMissed at ${owner}: ${x} ${y}`, color)
+
         if (myMove && lastHits['me']) checkDone(lastHits['me'].x, lastHits['me'].y, 'me', false)
         if (!myMove && lastHits['enemy']) checkDone(lastHits['enemy'].x, lastHits['enemy'].y, 'enemy', false)
         if (!myMove && lastHits['me']) return checkDone(lastHits['me'].x, lastHits['me'].y, 'me', true)
@@ -267,6 +257,7 @@ function shoot(event, owner) {
         console.log(`%cHit at ${owner}: ${x} ${y}`, color)
         console.log(`%cLast hit at enemy: `, color, lastHits['enemy'])
         console.log(`%cLast hit at me: `, color, lastHits['me'])
+
         if (--field.shipSectors == 0) return endGame(owner)
         if (myMove) return checkDone(x, y, owner, false)
         if (!myMove) return checkDone(x, y, owner, true)
@@ -274,10 +265,10 @@ function shoot(event, owner) {
 }
 
 /**
- * Противник делает ход по заданным координатам.
+ * Enemy hits at the given coordinated.
  * 
- * @param {number} x Координата X.
- * @param {number} y Координата Y.
+ * @param {number} x Coordinate X.
+ * @param {number} y Coordinate Y.
  */
 function enemyMove(x, y) {
     node_fieldBlocker.classList.remove('hidden')
@@ -286,13 +277,13 @@ function enemyMove(x, y) {
         let event = {}
         event.target = document.getElementById(`me-${x}-${y}`)
         shoot(event, 'me')
-    }, 800)
+    }, 500)
     
     
 }
 
 /**
- * Вычисляет следующий ход противника.
+ * Generates random coordinates for the next enemy hit.
  */
 function shootRandom() {
     let field = fields.me
@@ -303,27 +294,27 @@ function shootRandom() {
 }
 
 /**
- * Проверяет, добит ли корабль последним попаданием.
+ * Checks if the whole ship killed with the last hit.
  * 
- * @param {number} x Координата X.
- * @param {number} y Координата Y.
- * @param {string} owner Владелец поля (me/enemy).
- * @param {boolean} makeHit Делать ли выстрел после проверки.
- * @returns {boolean} Добит ли корабль.
+ * @param {number} x Coordinate X.
+ * @param {number} y Coordinate Y.
+ * @param {string} owner Field owner (me/enemy).
+ * @param {boolean} makeHit Makes next hit if true.
+ * @returns {boolean} Is the whole ship killed.
  */
 function checkDone(oldX, oldY, owner, makeHit) {
     let field = fields[owner]
 
     /**
-     * Неизвестен ли сектор с заданными координатами.
+     * Is the given sector unknown.
      */
     let isUnknown = (x, y) => field[x] && field[x][y] && !field[x][y].opened
     /**
-     * Является ли заданный сектор подбитым кораблем.
+     * Is the given sector a hit ship.
      */
     let isHit = (x, y) => field[x] && field[x][y] && field[x][y].status == 2
     /**
-     * Является ли заданный корабль самым большим из оставшихся.
+     * Is the given ship the biggest one lost.
      */
     let isBiggest = (size) => {
         if (size == 4) return true
@@ -333,7 +324,9 @@ function checkDone(oldX, oldY, owner, makeHit) {
         return true
     }
 
-    /** Длина уже подбитой части */
+    /** 
+     * Lenght of the hit part by now. 
+     */
     let length = 1
 
     let horizontal = false
@@ -443,11 +436,11 @@ function checkDone(oldX, oldY, owner, makeHit) {
 }
 
 /**
- * Помечает данный корабль убитым. Обводит его.
+ * Marks the given ship as killed and outlines it.
  * 
- * @param {number} oldX Координата X.
- * @param {number} oldY Координа Y.
- * @param {boolean} owner Владелец поля (me/enemy).
+ * @param {number} oldX Coordinate X.
+ * @param {number} oldY Coordinate Y.
+ * @param {boolean} owner Field owner (me/enemy).
  */
 function markDone(oldX, oldY, owner) {
     console.log('Marking as done')
@@ -504,20 +497,38 @@ function markDone(oldX, oldY, owner) {
 }
 
 /**
- * Заканчиваем игру, победитель - не владелец поля.
- * @param {string} owner Владелец поля (me/enemy) последнего убитого корабля.
+ * Ends game, the winner is NOT the Field owner.
+ * @param {string} owner Field owner (me/enemy) of the last killed ship.
  */
 function endGame(owner) {
     node_endGame.classList.remove('hidden')
     node_endGameTitle.classList.remove('hidden')
     node_endGameButton.classList.remove('hidden')
     if (owner == 'me') {
-        console.log('Проигрыш')
-        node_endGameTitle.innerText = 'Вы проиграли..'
+        console.log('You lost..')
+        run0to100(showShips, 'enemy')
+        node_endGameTitle.innerText = 'You lost..'
     } else {
-        console.log('Выигрыш')
-        node_endGameTitle.innerText = 'Вы выиграли!'
+        console.log('You won!')
+        node_endGameTitle.innerText = 'You won!'
     }
+}
+
+
+/**
+ * Shows all ships of the enemy's field.
+ * 
+ * @param {number} oldX Coordinate X.
+ * @param {number} oldY Coordinate Y.
+ * @param {boolean} owner Field owner (me/enemy).
+ */
+function showShips(x, y, owner) {
+    let field = fields[owner]
+    let sector = field[x][y]
+    let node_sector = document.getElementById(`enemy-${x}-${y}`)
+    console.log(node_sector)
+
+    if (sector.status == 1) node_sector.classList.add('field__sector-ship')
 }
 
 node_newGame.addEventListener('click', () => {
