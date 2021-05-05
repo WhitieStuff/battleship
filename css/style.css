@@ -17,11 +17,9 @@
     font-weight: 300;
 }
 
-.main {
-    position: relative;
+.header {
     margin: auto;
-    width: max-content;
-    min-width: 650px;
+    width: 1010px;
     font-family: 'Open Sans Condenced';
 }
 
@@ -41,6 +39,13 @@
     background: #ececec;
     border: 1px solid #cfcfcf;
     color: #0460a1;
+}
+
+.main {
+    position: relative;
+    margin: auto;
+    width: 1010px;
+    font-family: 'Open Sans Condenced';
 }
 
 .field-container {
@@ -152,37 +157,29 @@
 }
 
 .endGame {
-    position: relative;
-    top: -450px;
-    height: 450px;
+    position: absolute;
+    top: 0px;
+    height: 455px;
     width: 100%;
 }
 
 .endGame__title {
     position: relative;
     margin: auto;
-    height: 100%;
-    width: 100%;
-    padding-top: 80px;
-    background: #fff;
+    width: max-content;
     color: #0173c7;
     text-align: center;
-    font-size: 100px;
+    font-size: 30px;
+    animation: endGameTitle 1s;
 }
 
-.endGame__button {
-    cursor: pointer;
-    position: relative;
-    top: -220px;
-    margin: auto;
-    width: max-content;
-    font-size: 20px;
-    color: #0173c7;
-}
-
-.endGame__button:hover {
-    color: #0460a1;
-    transform: scale(1.1);
+@keyframes endGameTitle {
+    from {
+        transform: translateY(-300px);
+    }
+    to {
+        transform: translateY(0);
+    }
 }
 
 .noselect {

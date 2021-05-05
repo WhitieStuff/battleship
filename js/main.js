@@ -47,17 +47,6 @@ let node_newGame = document.getElementById('newGame')
   */
  let node_endGameTitle = document.getElementById('endGameTitle')
 
- /**
-  * Node of end-game message.
-  */
- let node_endGameButton = document.getElementById('endGameButton')
-
- node_endGameButton.addEventListener('click', event => {
-    event.target.classList.add('hidden')
-    node_endGameTitle.classList.add('hidden')
- })
-
-
 /**
  * Enemy's sectors.
  * Your sectors.
@@ -120,8 +109,6 @@ function newGame() {
     }
 
     node_endGame.classList.add('hidden')
-    node_endGameTitle.classList.add('hidden')
-    node_endGameButton.classList.add('hidden')
 
     
     console.log('%cНачата новая игра.', "color: green;")
@@ -502,8 +489,6 @@ function markDone(oldX, oldY, owner) {
  */
 function endGame(owner) {
     node_endGame.classList.remove('hidden')
-    node_endGameTitle.classList.remove('hidden')
-    node_endGameButton.classList.remove('hidden')
     if (owner == 'me') {
         console.log('You lost..')
         run0to100(showShips, 'enemy')
@@ -513,6 +498,7 @@ function endGame(owner) {
         node_endGameTitle.innerText = 'You won!'
     }
 }
+
 
 
 /**
@@ -526,7 +512,6 @@ function showShips(x, y, owner) {
     let field = fields[owner]
     let sector = field[x][y]
     let node_sector = document.getElementById(`enemy-${x}-${y}`)
-    console.log(node_sector)
 
     if (sector.status == 1) node_sector.classList.add('field__sector-ship')
 }

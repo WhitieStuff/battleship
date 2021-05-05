@@ -9,8 +9,10 @@
     <title>Battleship</title>
 </head>
 <body id="body">
-    <main class="main noselect" id="main">
+    <header class="header" id="header">
         <button class="button" id="newGame">New Game</button>
+    </header>
+    <main class="main noselect" id="main">
         <div class="field-container">
             <h1 class="title">Enemy's field</h1>
             <div class="field fieldEnemy" id="fieldEnemy"></div>
@@ -20,9 +22,8 @@
             <h1 class="title">My field</h1>
             <div class="field fieldMe" id="fieldMe"></div>
         </div>
-        <div class="endGame hidden" id="endGame">
-            <div class="endGame__title" id="endGameTitle">You lost..</div>
-            <div class="endGame__button" id="endGameButton">Hide</div>
+        <div class="endGame" id="endGame">
+            <div class="endGame__title" id="endGameTitle"></div>
         </div>
     </main>
 
