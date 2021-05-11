@@ -17,6 +17,10 @@
     font-weight: 300;
 }
 
+.body {
+    user-select: none; 
+}
+
 .header {
     margin: auto;
     width: 1010px;
@@ -181,7 +185,3 @@
         transform: translateY(0);
     }
 }
-
-.noselect {
-    user-select: none; 
-  }
