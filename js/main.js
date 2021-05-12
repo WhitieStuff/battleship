@@ -285,6 +285,7 @@ function shoot(event, owner) {
 
     if (sector.status == 1) {
         if (!myMove && skipHit) {
+            sector.opened = 0
             skipHit--
             console.log(`%cEnemy hits a ship but skips the move because it's the easy mode.\n`, color)
             return shootRandom()
