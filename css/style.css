@@ -67,6 +67,7 @@
 
 .main {
     position: relative;
+    display: flex;
     margin: auto;
     width: 1010px;
     font-family: 'Open Sans Condenced';
@@ -74,7 +75,6 @@
 
 .field-container {
     position: relative;
-    display: inline-block;
     margin: 0 50px;
     width: 401px;
 }
@@ -241,4 +241,24 @@
     to {
         transform: translateY(0);
     }
+}
+
+.ships-container {
+    max-width: 400px;
+    margin-top: 30px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.ship {
+    /* display: flex; */
+    width: 40px;
+}
+
+.ship__sector {
+    margin: auto;
+    width: 35px;
+    height: 35px;
+    background: #0173c7;
 }

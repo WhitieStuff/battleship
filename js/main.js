@@ -28,6 +28,15 @@ let node_fields = {
 }
 
 /**
+ * Node of the enemy's ships.
+ * Node of your ships.
+ */
+let node_ships = {
+    enemy: document.getElementById('shipsEnemy'),
+    me: document.getElementById('shipsMe')
+}
+
+/**
  * Node of field blocker.
  */
 let node_fieldBlocker = document.getElementById('fieldBlocker')
