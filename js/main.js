@@ -40,12 +40,34 @@ let node_newGame = document.getElementById('newGame')
 /**
  * Node of end-game popup.
  */
- let node_endGame = document.getElementById('endGame')
+let node_endGame = document.getElementById('endGame')
 
- /**
-  * Node of end-game message title.
-  */
- let node_endGameTitle = document.getElementById('endGameTitle')
+/**
+ * Node of end-game message title.
+ */
+let node_endGameTitle = document.getElementById('endGameTitle')
+
+
+/**
+ * Game mode. 0 - easy, 1 - hard.
+ */
+let mode = localStorage.getItem('mode') ? localStorage.getItem('mode') : 0
+
+/**
+ * Text names of the modes.
+ */
+let modes = ['easy', 'hard']
+
+/**
+ * Node of game-mode select.
+ */
+let node_mode = document.getElementById('mode')
+node_mode.value = mode
+node_mode.addEventListener('change', (event) => {
+    mode = event.target.value
+    localStorage.setItem('mode', mode)
+    newGame()
+})
 
 /**
  * Enemy's sectors.
@@ -70,16 +92,26 @@ let shipsLost = {
  */
 let myMove
 
+/**
+ * Number of hits that enemy skips. Don't hit the ship if != 0.
+ */
+let skipHit
+
 let getRandom = () => Math.floor(Math.random() * Math.floor(9))
 
 /**
  * Last hit at the enemy.
  * Last hit at me.
  */
- let lastHits = {
+let lastHits = {
     enemy: null,
     me: null
- }
+}
+
+/**
+ * Timeout for end-game animation.
+ */
+let animation
 
 /**
  * Starts a new game and redraws the fields.
@@ -99,6 +131,8 @@ function newGame() {
     lastHits.me = null
 
     myMove = true
+    skipHit = mode == "1" ? 0 : 3
+    clearTimeout(animation)
 
     /**
      * Enemy's sectors for event listeners.
@@ -109,9 +143,10 @@ function newGame() {
     }
 
     node_endGame.classList.add('hidden')
+    node_endGame.classList.remove('endGame-animation')
 
     
-    console.log('%cНачата новая игра.', "color: green;")
+    console.log(`%cNew game is started. \nGame mode: ${modes[mode]}. \n${skipHit} enemy's hits will be skipped. \n`, `color: green;`)
 }
 
 /**
@@ -156,6 +191,7 @@ function refreshSector(i, j, owner) {
  */
 function createShip(size, owner) {
     let field = fields[owner]
+    let noClass = owner == 'enemy'
     
     let horizontal = Math.round(Math.random())
     let x = getRandom()
@@ -172,7 +208,7 @@ function createShip(size, owner) {
     for (let i = 0; i < size; i++) {
         let xi = horizontal ? x + i : x
         let yi = !horizontal ? y + i : y
-        markSector(xi, yi, owner, 1, false)
+        markSector(xi, yi, owner, 1, false, noClass)
     }
     
     // Runs around the ship and marks sectors as 'next to the ship'.
@@ -180,7 +216,7 @@ function createShip(size, owner) {
         let xi = horizontal ? x + i : x + j
         let yi = horizontal ? y + j : y + i
         if (xi > 9 || yi > 9 || xi < 0 || yi < 0 || field[xi][yi].status) continue; 
-        markSector(xi, yi, owner, 4, false)
+        markSector(xi, yi, owner, 4, false, true)
     }
 }
 
@@ -191,20 +227,25 @@ function createShip(size, owner) {
  * @param {number} y Coordinate Y.
  * @param {string} owner Field owner (me/enemy).
  * @param {number} status The given status.
- * @param {boolean} opened Is the sector open.
+ * @param {boolean} opened Mark as opened if true.
+ * @param {boolean} noClass Do not add class if true.
  */
-function markSector (x, y, owner, status, opened) {
+function markSector (x, y, owner, status, open, noClass) {
     let field = fields[owner]
     let sector = document.getElementById(`${owner}-${x}-${y}`)
 
     field[x][y].status = status
-    field[x][y].opened = opened
+    field[x][y].opened = open
+
+    if (open) sector.classList.remove('field__sector-enemy')
 
     sector.classList.remove('field__sector-miss')
+    sector.classList.remove('field__sector-next')
     sector.classList.remove('field__sector-ship')
     sector.classList.remove('field__sector-hit')
 
-    if (owner == 'enemy' && statuses[status] == 'ship') return
+    if (noClass) return
+
     sector.classList.add(`field__sector-${statuses[status]}`)
 }
 
@@ -221,16 +262,16 @@ function shoot(event, owner) {
     let sector = field[x][y]
     let color = owner == 'me' ? 'color: red;' : 'color: green;'
 
-    console.log(`%c\nShot at ${owner}: ${x} ${y}`, color)
+    console.log(`%cShot at ${owner}: ${x} ${y}`, color)
 
 
     if (sector.opened) return
     sector.opened = 1
     
     if (sector.status == 0 || sector.status == 4) {
-        markSector(x, y, owner, 3, true)
+        markSector(x, y, owner, 3, true, false)
         myMove = !myMove
-        console.log(`%cMissed at ${owner}: ${x} ${y}`, color)
+        console.log(`%cMissed.\n`, color)
 
         if (myMove && lastHits['me']) checkDone(lastHits['me'].x, lastHits['me'].y, 'me', false)
         if (!myMove && lastHits['enemy']) checkDone(lastHits['enemy'].x, lastHits['enemy'].y, 'enemy', false)
@@ -239,11 +280,15 @@ function shoot(event, owner) {
     }
 
     if (sector.status == 1) {
-        markSector(x, y, owner, 2, true)
+        if (!myMove && skipHit) {
+            skipHit--
+            console.log(`%cEnemy hits a ship but skips the move because it's the easy mode.\n`, color)
+            return shootRandom()
+        }
+        markSector(x, y, owner, 2, true, false)
         lastHits[owner] = {x, y}
-        console.log(`%cHit at ${owner}: ${x} ${y}`, color)
-        console.log(`%cLast hit at enemy: `, color, lastHits['enemy'])
-        console.log(`%cLast hit at me: `, color, lastHits['me'])
+        console.log(`%cHit.\n`, color)
+
 
         if (--field.shipSectors == 0) return endGame(owner)
         if (myMove) return checkDone(x, y, owner, false)
@@ -412,8 +457,6 @@ function checkDone(oldX, oldY, owner, makeHit) {
         makeDone()
     }
 
-    console.log("The whole ship killed?", isDone)
-
     if (makeHit) {
         console.log('\nEnemy shoots')
         if (newX == 11) return shootRandom()
@@ -430,7 +473,8 @@ function checkDone(oldX, oldY, owner, makeHit) {
  * @param {boolean} owner Field owner (me/enemy).
  */
 function markDone(oldX, oldY, owner) {
-    console.log('Marking as done')
+    let noClass = owner == 'me'
+    console.log('The whole ship is done.\n')
     let field = fields[owner]
     oldX = parseInt(oldX)
     oldY = parseInt(oldY)
@@ -438,7 +482,7 @@ function markDone(oldX, oldY, owner) {
     let isUnknown = (x, y) => field[x] && field[x][y] && !field[x][y].opened
 
     let getAround = (x, y) => {
-        for (let i = x - 1; i <= x + 1; i++) for (let j = y - 1; j <= y + 1; j++) if (isUnknown(i, j)) markSector(i, j, owner, 3, true)
+        for (let i = x - 1; i <= x + 1; i++) for (let j = y - 1; j <= y + 1; j++) if (isUnknown(i, j)) markSector(i, j, owner, 4, true, noClass)
     }
 
     let goRight = (x, y) => {
@@ -488,36 +532,54 @@ function markDone(oldX, oldY, owner) {
  * @param {string} owner Field owner (me/enemy) of the last killed ship.
  */
 function endGame(owner) {
-    node_endGame.classList.remove('hidden')
+    let color = owner == 'me' ? 'color: red;' : 'color: green;'
+
     if (owner == 'me') {
-        console.log('You lost..')
-        run0to100(showShips, 'enemy')
+        console.log('%c\nYou lost..\n', color)
         node_endGameTitle.innerText = 'You lost..'
     } else {
-        console.log('You won!')
+        console.log('%c\nYou won!\n', color)
         node_endGameTitle.innerText = 'You won!'
     }
+    openField(0, 0)
+    node_endGame.classList.remove('hidden')
+    node_endGame.classList.add('endGame-animation')
 }
 
 
 
 /**
- * Shows all ships of the enemy's field.
- * 
+ * Opens the enemy's field.
+
  * @param {number} oldX Coordinate X.
  * @param {number} oldY Coordinate Y.
- * @param {boolean} owner Field owner (me/enemy).
  */
-function showShips(x, y, owner) {
-    let field = fields[owner]
-    let sector = field[x][y]
-    let node_sector = document.getElementById(`enemy-${x}-${y}`)
+function openField(x, y) {
+    if (y > 9) {
+        x++
+        y = 0
+    }
+    if (x > 9) return
+    let field = fields['enemy']
+    let sector = field[y][x]
+    let node_sector = document.getElementById(`enemy-${y}-${x}`)
 
-    if (sector.status == 1) node_sector.classList.add('field__sector-ship')
+    animation = setTimeout(() => {
+        if (sector.status == 1) node_sector.classList.add('field__sector-ship')
+        node_sector.classList.remove('field__sector-enemy')
+
+        y++
+        openField(x, y)
+    }, 10)
+
 }
 
 node_newGame.addEventListener('click', () => {
     newGame()
 })
+
+window.oncontextmenu = () => {
+    return false
+}
 
 newGame()
