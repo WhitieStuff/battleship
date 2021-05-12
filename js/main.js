@@ -51,10 +51,11 @@ let node_ships = {
 let node_fieldBlocker = document.getElementById('fieldBlocker')
 
 node_fieldBlocker.addEventListener('click', () => {
-    node_fields.me.classList.add('field_animated')
+    let node = document.getElementsByClassName('field-container')[1]
+    node.classList.add('field_animated')
     node_shipContainers.me.classList.add('field_animated')
     setTimeout(() => {
-        node_fields.me.classList.remove('field_animated')
+        node.classList.remove('field_animated')
         node_shipContainers.me.classList.remove('field_animated')
     }, 1000)
 })
@@ -80,9 +81,14 @@ let node_endGame = document.getElementById('endGame')
 let node_endGameTitle = document.getElementById('endGameTitle')
 
 /**
+ * Node of the rotation tip.
+ */
+let node_tip = document.getElementById('tip')
+
+/**
  * Node of the rotate-area.
  */
-let node_rotate = document.getElementById('rotate')
+let node_shipsBlock = document.getElementById('shipsBlock')
 
 
 /**
@@ -105,6 +111,7 @@ node_mode.addEventListener('change', (event) => {
     localStorage.setItem('mode', mode)
     newGame()
 })
+
 
 
 /**
@@ -173,14 +180,36 @@ let lastHits = {
 let animation
 
 /**
+ * Is the drag'n'drop ship vertical.
+ */
+let isVertical
+
+/**
+ * Do not rotate if true.
+ */
+let rotatePause = false
+
+/**
+ * The element that is being dragged.
+ */
+let dragEvent
+
+/**
  * Starts a new game and redraws the fields.
  */
 function newGame() {
     run0to100(refreshSector, 'me')
     run0to100(refreshSector, 'enemy')
 
-    node_fieldBlocker.classList.add('hidden')
-    if (layout == '0') node_fieldBlocker.classList.remove('hidden')
+    
+    if (layout == '0') {
+        node_fieldBlocker.classList.remove('hidden')
+        node_shipsBlock.classList.add('hidden')
+    } else {
+        node_shipsBlock.classList.remove('hidden')
+        node_fieldBlocker.classList.add('hidden')
+    }
+    
 
     node_shipContainers.me.innerHTML = ""
     node_shipContainers.enemy.innerHTML = ""
@@ -659,10 +688,11 @@ function drawShip(size, owner) {
     newShip.classList.add('ship')
     newShip.classList.add(`ship-${owner}`)
     newShip.classList.add(`ship-${owner}-${size}`)
-    if (owner == 'me') newShip.draggable = true
+    if (owner == 'me') 
     newShip.testable = true
 
     container.appendChild(newShip)
+    newShip.size = size
 
     for (let i = 0; i < size; i++) {
         let newSector = document.createElement('div')
@@ -673,17 +703,38 @@ function drawShip(size, owner) {
     }
 
     if (owner == 'me') {
-        newShip.addEventListener('dragstart', (event) => {
-            event.target.classList.add('ship-moved')
-            node_rotate.classList.remove('hidden')
-            console.log(event.dataTransfer.getData('icon'))
-        })
-        newShip.addEventListener('dragend', (event) => {
-            event.target.classList.remove('ship-moved')
-            node_rotate.classList.add('hidden')
-        })
+        newShip.draggable = true
+        newShip.imageHorizontal = new Image()
+        newShip.imageHorizontal.src = (`./images/ship-horizontal-${size}.png`)
+        newShip.imageVertical = new Image()
+        newShip.imageVertical.src = (`./images/ship-vertical-${size}.png`)
+        newShip.addEventListener('dragstart', event => dragStartHandler(event))
+        newShip.addEventListener('dragend', event => dragEndHandler(event))
     }
 }
+
+/**
+ * Handles the drag start of the ship.
+ * @param {Event} event The event of drag start.
+ */
+function dragStartHandler(event) {
+    let image = event.ctrlKey || event.altKey ? event.target.imageVertical : event.target.imageHorizontal
+    event.target.classList.add('ship-moved')
+    node_tip.classList.remove('hidden')
+    event.dataTransfer.setDragImage(image, 15, 15)
+    isVertical = false
+    dragEvent = event
+}
+
+/**
+ * Handles the drag end of the ship.
+ * @param {Event} event The event of the drag end.
+ */
+function dragEndHandler(event) {
+    event.target.classList.remove('ship-moved')
+    node_tip.classList.add('hidden')
+}
+
 
 node_newGame.addEventListener('click', () => {
     newGame()

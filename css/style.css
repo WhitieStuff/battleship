@@ -294,6 +294,15 @@
     flex-direction: row;
     align-items: center;
     height: 40px;
+    cursor: pointer;
+}
+
+.ship-me:hover {
+    transform: translateY(-2px);
+}
+
+.ship-me:hover .ship__sector {
+    background: #0460a1;
 }
 
 .ship-moved .ship__sector {
@@ -317,7 +326,7 @@
     border-right: 1px solid #d5d5d5;
 }
 
-.rotate {
+.rotate-tip {
     position: absolute;
     top: 470px;
     width: 500px;
@@ -330,8 +339,12 @@
     border: 1px dashed #d5d5d5;
 }
 
-.rotate:hover {
-background: #ececec;
-border: 1px dashed #cfcfcf;
-color: #0460a1;
+.ships-block {
+    position: absolute;
+    top: 0;
+    /* right: 0; */
+    width: 600px;
+    height: 455px;
+    transform: translateX(50%);
+    z-index: 9100;
 }
