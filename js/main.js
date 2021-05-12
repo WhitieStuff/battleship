@@ -241,12 +241,16 @@ function markSector (x, y, owner, status, open, noClass) {
 
     sector.classList.remove('field__sector-miss')
     sector.classList.remove('field__sector-next')
-    sector.classList.remove('field__sector-ship')
-    sector.classList.remove('field__sector-hit')
+    sector.classList.remove(`field__sector-ship-me`)
+    sector.classList.remove(`field__sector-ship-enemy`)
+    sector.classList.remove('field__sector-hit-me')
+    sector.classList.remove('field__sector-hit-enemy')
 
     if (noClass) return
 
-    sector.classList.add(`field__sector-${statuses[status]}`)
+    let postfix = status == 1 || status == 2 ? `-${owner}` : ''
+
+    sector.classList.add(`field__sector-${statuses[status]}${postfix}`)
 }
 
 /**
@@ -565,7 +569,7 @@ function openField(x, y) {
     let node_sector = document.getElementById(`enemy-${y}-${x}`)
 
     animation = setTimeout(() => {
-        if (sector.status == 1) node_sector.classList.add('field__sector-ship')
+        if (sector.status == 1) node_sector.classList.add('field__sector-ship-enemy')
         node_sector.classList.remove('field__sector-enemy')
 
         y++

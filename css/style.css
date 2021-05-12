@@ -141,9 +141,14 @@
     background: #c0c0c0;
 }
 
-.field__sector-ship {
+.field__sector-ship-me {
     background: #0173c7;
     border: 1px solid #0173c7;
+}
+
+.field__sector-ship-enemy {
+    background: #929292;
+    border: 1px solid #929292;
 }
 
 .field__sector-miss {
@@ -168,16 +173,29 @@
     background-position: top right;
 } */
 
-.field__sector-hit {
+.field__sector-hit-me {
     border: 1px solid #0173c7;
-    background: #0173c7 url(../images/hit.png) no-repeat;
+    background: #0173c7 url(../images/hit-me.png) no-repeat;
     background-position: top right;
-    animation: .5s linear 0s alternate hit;   
+    animation: .5s linear 0s alternate hit-me;   
 }
 
-@keyframes hit { 
+.field__sector-hit-enemy {
+    /* border: 1px solid #007f74; */
+    border: 1px solid #929292;
+    background: #929292 url(../images/hit-enemy.png) no-repeat;
+    background-position: top right;
+    animation: .5s linear 0s alternate hit-enemy;
+}
+
+@keyframes hit-me { 
     from { background-color: #B96F73; border: 1px solid #B96F73; } 
     to { background-color: #0173c7; border: 1px solid #0173c7; }
+}
+
+@keyframes hit-enemy { 
+    from { background-color: #B96F73; border: 1px solid #B96F73; } 
+    to { background-color: #929292; border: 1px solid #929292; }
 }
 
 /* .field__sector-hit:hover {
