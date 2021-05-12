@@ -79,6 +79,11 @@ let node_endGame = document.getElementById('endGame')
  */
 let node_endGameTitle = document.getElementById('endGameTitle')
 
+/**
+ * Node of the rotate-area.
+ */
+let node_rotate = document.getElementById('rotate')
+
 
 /**
  * Game mode. 0 - easy, 1 - hard.
@@ -110,7 +115,7 @@ let layout = localStorage.getItem('layout') ? localStorage.getItem('layout') : 0
 /**
  * Text names of the modes.
  */
- let layouts = ['manual', 'auto']
+let layouts = ['manual', 'auto']
 
 /**
  * Node of layout select.
@@ -665,6 +670,18 @@ function drawShip(size, owner) {
         newSector.classList.add(`ship__sector-${owner}`)
 
         newShip.appendChild(newSector)
+    }
+
+    if (owner == 'me') {
+        newShip.addEventListener('dragstart', (event) => {
+            event.target.classList.add('ship-moved')
+            node_rotate.classList.remove('hidden')
+            console.log(event.dataTransfer.getData('icon'))
+        })
+        newShip.addEventListener('dragend', (event) => {
+            event.target.classList.remove('ship-moved')
+            node_rotate.classList.add('hidden')
+        })
     }
 }
 

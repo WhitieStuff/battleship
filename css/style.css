@@ -296,6 +296,10 @@
     height: 40px;
 }
 
+.ship-moved .ship__sector {
+    background: #929292;
+}
+
 .ship__sector {
     border-top: 1px solid #d5d5d5;
     border-bottom: 1px solid #d5d5d5;
@@ -311,4 +315,23 @@
 
 .ship__sector:last-child{
     border-right: 1px solid #d5d5d5;
+}
+
+.rotate {
+    position: absolute;
+    top: 470px;
+    width: 500px;
+    height: 100px;
+    background: #f9f9f9;
+    text-align: center;
+    line-height: 100px;
+    color: #0173c7;
+    font-size: 30px;
+    border: 1px dashed #d5d5d5;
+}
+
+.rotate:hover {
+background: #ececec;
+border: 1px dashed #cfcfcf;
+color: #0460a1;
 }
