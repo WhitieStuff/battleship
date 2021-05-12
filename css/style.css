@@ -31,7 +31,7 @@
 .button {
     display: block;
     margin: auto;
-    margin-top: 50px;
+    margin-top: 30px;
     width: 150px;
     padding: 10px 20px;
     background: #f9f9f9;
@@ -48,17 +48,16 @@
 }
 
 .mode {
-    display: inline-block;
+    margin: auto;
     width: 150px;
-    border-top: none;
     color: #0173c7;
-    font-size: 20px;
-
+    font-size: 16px;
 }
 
 .mode__select {
+    margin-top: 1px;
     border: none;
-    font-size: 20px;
+    font-size: 16px;
     color: #0173c7;
 }
 
@@ -67,16 +66,17 @@
 
 .main {
     position: relative;
-    display: flex;
+    /* width: 100%; */
     margin: auto;
-    width: 1010px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
     font-family: 'Open Sans Condenced';
 }
 
 .field-container {
     position: relative;
-    margin: 0 50px;
-    width: 401px;
+    /* width: 401px; */
 }
 
 .title {
@@ -94,6 +94,34 @@
     border-left: 1px solid #d5d5d5;
 }
 
+.field_animated {
+    animation: 1s field-animation;
+}
+
+/* @keyframes field-animation {
+    from { transform: scale(1); }
+    25% { transform: scale(1.03); }
+    50% { transform: scale(1); }
+    75% { transform: scale(1.03); }
+    to { transform: scale(1); }
+} */
+
+@keyframes field-animation {
+    from { transform: translateY(0); }
+    25% { transform: translateY(-5px); }
+    50% { transform: translateY(0); }
+    75% { transform: translateY(-5px); }
+    to { transform: translateY(0); }
+}
+
+/* .fieldEnemy {
+    margin-right: 10px;
+}
+
+.fieldMe {
+    margin-left: 10px;
+} */
+
 .fieldBlocker {
     position: absolute;
     display: block;
@@ -102,11 +130,14 @@
     width: 401px;
     height: 401px;
     border: 1px solid #d5d5d5;
+    animation: 2s linear 0s infinite alternate ship; 
+    
+}
+
+.animation {
     background: #e2e2e2dd url(../images/animation.png) no-repeat;
     background-position: center 80px;
     background-size: 200px 200px;
-    animation: 2s linear 0s infinite alternate ship; 
-    
 }
 
 @keyframes ship { 
@@ -244,21 +275,40 @@
 }
 
 .ships-container {
-    max-width: 400px;
-    margin-top: 30px;
+    margin-top: 50px;
     display: flex;
+    flex-direction: column;
     flex-wrap: wrap;
-    align-items: center;
+}
+
+.ships-container_enemy {
+    align-items: flex-end;
+}
+
+.ships-container_me {
+    align-items: flex-start;
 }
 
 .ship {
-    /* display: flex; */
-    width: 40px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    height: 40px;
 }
 
 .ship__sector {
-    margin: auto;
-    width: 35px;
-    height: 35px;
+    border-top: 1px solid #d5d5d5;
+    border-bottom: 1px solid #d5d5d5;
+    width: 36px;
+    height: 36px;
     background: #0173c7;
+    /* background: #c0c0c0; */
+}
+
+.ship__sector:first-child{
+    border-left: 1px solid #d5d5d5;
+}
+
+.ship__sector:last-child{
+    border-right: 1px solid #d5d5d5;
 }

@@ -28,18 +28,41 @@ let node_fields = {
 }
 
 /**
+ * Node of the enemy's ships container.
+ * Node of your ships container.
+ */
+let node_shipContainers = {
+    enemy: document.getElementById('shipsEnemy'),
+    me: document.getElementById('shipsMe')
+}
+
+/**
  * Node of the enemy's ships.
  * Node of your ships.
  */
 let node_ships = {
-    enemy: document.getElementById('shipsEnemy'),
-    me: document.getElementById('shipsMe')
+    enemy: document.getElementsByClassName('ship-enemy'),
+    me: document.getElementsByClassName('ship-me')
 }
 
 /**
  * Node of field blocker.
  */
 let node_fieldBlocker = document.getElementById('fieldBlocker')
+
+node_fieldBlocker.addEventListener('click', () => {
+    node_fields.me.classList.add('field_animated')
+    node_shipContainers.me.classList.add('field_animated')
+    setTimeout(() => {
+        node_fields.me.classList.remove('field_animated')
+        node_shipContainers.me.classList.remove('field_animated')
+    }, 1000)
+})
+
+/**
+ * Node of field blocker with animation.
+ */
+let node_animation = document.getElementById('animation')
 
 /**
  * Node of "New Game" button.
@@ -75,6 +98,28 @@ node_mode.value = mode
 node_mode.addEventListener('change', (event) => {
     mode = event.target.value
     localStorage.setItem('mode', mode)
+    newGame()
+})
+
+
+/**
+ * Layout mode. 0 - manual, 1 - auto.
+ */
+let layout = localStorage.getItem('layout') ? localStorage.getItem('layout') : 0
+
+/**
+ * Text names of the modes.
+ */
+ let layouts = ['manual', 'auto']
+
+/**
+ * Node of layout select.
+ */
+let node_layout = document.getElementById('layout')
+node_layout.value = layout
+node_layout.addEventListener('change', (event) => {
+    layout = event.target.value
+    localStorage.setItem('layout', layout)
     newGame()
 })
 
@@ -128,9 +173,19 @@ let animation
 function newGame() {
     run0to100(refreshSector, 'me')
     run0to100(refreshSector, 'enemy')
+
+    node_fieldBlocker.classList.add('hidden')
+    if (layout == '0') node_fieldBlocker.classList.remove('hidden')
+
+    node_shipContainers.me.innerHTML = ""
+    node_shipContainers.enemy.innerHTML = ""
+
+
     shipSizes.forEach(ship => {
-        createShip(ship, 'me')
+        if (layout == '1') createShip(ship, 'me')
+        drawShip(ship, 'me')
         createShip(ship, 'enemy')
+        drawShip(ship, 'enemy')
     })
     fields.enemy.shipSectors = shipSizes.reduce(reducer)
     fields.me.shipSectors = shipSizes.reduce(reducer)
@@ -155,7 +210,7 @@ function newGame() {
     node_endGame.classList.remove('endGame-animation')
 
     
-    console.log(`%cNew game is started. \nGame mode: ${modes[mode]}. \n${skipHit} enemy's hits will be skipped. \n`, `color: green;`)
+    console.log(`%cNew game is started.\nGame mode: ${modes[mode]}.\n${skipHit} enemy's hits will be skipped.\nChosen layout: ${layouts[layout]}\n`, `color: green;`)
 }
 
 /**
@@ -317,9 +372,9 @@ function shoot(event, owner) {
  * @param {number} y Coordinate Y.
  */
 function enemyMove(x, y) {
-    node_fieldBlocker.classList.remove('hidden')
+    node_animation.classList.remove('hidden')
     setTimeout(() => {
-        node_fieldBlocker.classList.add('hidden')
+        node_animation.classList.add('hidden')
         let event = {}
         event.target = document.getElementById(`me-${x}-${y}`)
         shoot(event, 'me')
@@ -586,6 +641,31 @@ function openField(x, y) {
         openField(x, y)
     }, 10)
 
+}
+
+/**
+ * Draws a hypothetical ship under the field.
+ * @param {number} size The size of the ship.
+ * @param {string} owner Owner (me/enemy) of the ships.
+ */
+function drawShip(size, owner) {
+    let container = node_shipContainers[owner]
+    let newShip = document.createElement('div')
+    newShip.classList.add('ship')
+    newShip.classList.add(`ship-${owner}`)
+    newShip.classList.add(`ship-${owner}-${size}`)
+    if (owner == 'me') newShip.draggable = true
+    newShip.testable = true
+
+    container.appendChild(newShip)
+
+    for (let i = 0; i < size; i++) {
+        let newSector = document.createElement('div')
+        newSector.classList.add('ship__sector')
+        newSector.classList.add(`ship__sector-${owner}`)
+
+        newShip.appendChild(newSector)
+    }
 }
 
 node_newGame.addEventListener('click', () => {

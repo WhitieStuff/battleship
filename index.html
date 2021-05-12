@@ -18,19 +18,27 @@
                 <option value="1">Hard</option>
             </select>
         </div>
+        <div class="mode">
+            Layout:
+            <select class="mode__select" name="layout" id="layout">
+                <option value="0" selected>Manual</option>
+                <option value="1">Auto</option>
+            </select>
+        </div>
     </header>
     <main class="main" id="main">
+        <div class="ships-container ships-container_enemy" id="shipsEnemy"></div>
         <div class="field-container">
             <h1 class="title">Enemy's field</h1>
             <div class="field fieldEnemy" id="fieldEnemy"></div>
-            <div class="ships-container" id="shipsEnemy"></div>
+            <div class="fieldBlocker animation hidden" id="animation"></div>
             <div class="fieldBlocker hidden" id="fieldBlocker"></div>
         </div>
         <div class="field-container">
             <h1 class="title">My field</h1>
             <div class="field fieldMe" id="fieldMe"></div>
-            <div class="ships-container" id="shipsMe"></div>
         </div>
+        <div class="ships-container ships-container_me" id="shipsMe"></div>
         <div class="endGame" id="endGame">
             <div class="endGame__title" id="endGameTitle"></div>
         </div>
