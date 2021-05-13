@@ -13,25 +13,38 @@
         <button class="button" id="newGame">New Game</button>
         <div class="mode">
             Game mode:
-            <select class="mode__select" name="mode" id="mode">
+            <select class="mode__select ddd" name="mode" id="mode">
                 <option value="0" selected>Easy</option>
                 <option value="1">Hard</option>
             </select>
         </div>
+        <div class="mode">
+            Layout:
+            <select class="mode__select" name="layout" id="layout">
+                <option value="0" selected>Manual</option>
+                <option value="1">Auto</option>
+            </select>
+        </div>
     </header>
     <main class="main" id="main">
+        <div class="ships-container ships-container_enemy" id="shipsEnemy"></div>
         <div class="field-container">
             <h1 class="title">Enemy's field</h1>
             <div class="field fieldEnemy" id="fieldEnemy"></div>
+            <div class="fieldBlocker animation hidden" id="animation"></div>
             <div class="fieldBlocker hidden" id="fieldBlocker"></div>
         </div>
         <div class="field-container">
             <h1 class="title">My field</h1>
             <div class="field fieldMe" id="fieldMe"></div>
         </div>
+        <div class="ships-container ships-container_me" id="shipsMe"></div>
         <div class="endGame" id="endGame">
             <div class="endGame__title" id="endGameTitle"></div>
         </div>
+        <div class="ships-block hidden" id="shipsBlock"></div>
+        <div class="tip finish greyed-out hidden" id="finish">Finish placing and start the game</div>
+        <div class="tip hidden" id="tip">Drag a ship while holding CTRL to rotate it.</div>
     </main>
 
     <script src="./js/main.js"></script>

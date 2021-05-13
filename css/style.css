@@ -31,7 +31,7 @@
 .button {
     display: block;
     margin: auto;
-    margin-top: 50px;
+    margin-top: 30px;
     width: 150px;
     padding: 10px 20px;
     background: #f9f9f9;
@@ -48,35 +48,42 @@
 }
 
 .mode {
-    display: inline-block;
+    margin: auto;
     width: 150px;
-    border-top: none;
     color: #0173c7;
-    font-size: 20px;
-
+    font-size: 16px;
 }
 
 .mode__select {
+    margin-top: 1px;
     border: none;
-    font-size: 20px;
+    font-size: 16px;
+    display: inline-block;
     color: #0173c7;
+    font-weight: bold;
+    text-decoration: underline;
+    cursor: pointer;
+    appearance: none;
+    padding: 0 5px;
 }
 
 .mode__select:hover {
+    color: #0460a1;
 }
 
 .main {
     position: relative;
+    /* width: 100%; */
     margin: auto;
-    width: 1010px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
     font-family: 'Open Sans Condenced';
 }
 
 .field-container {
     position: relative;
-    display: inline-block;
-    margin: 0 50px;
-    width: 401px;
+    /* width: 401px; */
 }
 
 .title {
@@ -94,6 +101,34 @@
     border-left: 1px solid #d5d5d5;
 }
 
+.field_animated {
+    animation: .5s field-animation;
+}
+
+/* @keyframes field-animation {
+    from { transform: scale(1); }
+    25% { transform: scale(1.03); }
+    50% { transform: scale(1); }
+    75% { transform: scale(1.03); }
+    to { transform: scale(1); }
+} */
+
+@keyframes field-animation {
+    from { transform: translateY(0); }
+    25% { transform: translateY(-5px); }
+    50% { transform: translateY(0); }
+    75% { transform: translateY(-5px); }
+    to { transform: translateY(0); }
+}
+
+/* .fieldEnemy {
+    margin-right: 10px;
+}
+
+.fieldMe {
+    margin-left: 10px;
+} */
+
 .fieldBlocker {
     position: absolute;
     display: block;
@@ -102,11 +137,14 @@
     width: 401px;
     height: 401px;
     border: 1px solid #d5d5d5;
+    animation: 2s linear 0s infinite alternate ship; 
+    
+}
+
+.animation {
     background: #e2e2e2dd url(../images/animation.png) no-repeat;
     background-position: center 80px;
     background-size: 200px 200px;
-    animation: 2s linear 0s infinite alternate ship; 
-    
 }
 
 @keyframes ship { 
@@ -130,6 +168,14 @@
     border-right: 1px solid #d5d5d5;
     border-bottom: 1px solid #d5d5d5;
     transition: none;
+}
+
+.field__sector-dragover-ok {
+    background: #0460a1;
+}
+
+.field__sector-dragover-bad {
+    background: #929292;
 }
 
 .field__sector-enemy {
@@ -241,4 +287,110 @@
     to {
         transform: translateY(0);
     }
+}
+
+.ships-container {
+    margin-top: 50px;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+}
+
+.ships-container_enemy {
+    align-items: flex-end;
+}
+
+.ships-container_me {
+    align-items: flex-start;
+}
+
+.ship {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    height: 40px;
+}
+
+.ship-draggable:hover {
+    transform: translateY(-2px);
+}
+
+.ship-draggable:hover .ship__sector {
+    background: #0460a1;
+    cursor: pointer;
+}
+
+.ship-moved .ship__sector, .ship-moved:hover .ship__sector {
+    background: #929292;
+}
+
+.ship-stroke .ship__sector {
+    background: #929292;
+    animation: .5s blow-ship;
+}
+
+@keyframes blow-ship {
+    from {
+        background-color: #B96F73;
+    }
+    to {
+        background-color: #929292;
+    }
+}
+
+.ship__sector {
+    border-top: 1px solid #d5d5d5;
+    border-bottom: 1px solid #d5d5d5;
+    width: 36px;
+    height: 36px;
+    background: #0173c7;
+    /* background: #c0c0c0; */
+}
+
+.ship__sector:first-child{
+    border-left: 1px solid #d5d5d5;
+}
+
+.ship__sector:last-child{
+    border-right: 1px solid #d5d5d5;
+}
+
+.tip {
+    position: absolute;
+    top: 470px;
+    width: 500px;
+    height: 100px;
+    background: #f9f9f9;
+    text-align: center;
+    line-height: 100px;
+    color: #0173c7;
+    font-size: 30px;
+    border: 1px dashed #d5d5d5;
+    cursor: pointer;
+}
+
+.finish {
+    border: 1px solid #d5d5d5;
+}
+
+.finish:hover {
+    background: #ececec;
+    border: 1px solid #cfcfcf;
+    color: #0460a1;
+}
+
+.greyed-out, .greyed-out:hover {
+    background: #f9f9f9;
+    border: 1px solid #d5d5d5;
+    color: #d5d5d5;
+}
+
+.ships-block {
+    position: absolute;
+    top: 0;
+    /* right: 0; */
+    width: 600px;
+    height: 455px;
+    transform: translateX(50%);
+    z-index: 9100;
 }
