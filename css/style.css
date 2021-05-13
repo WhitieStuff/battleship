@@ -102,7 +102,7 @@
 }
 
 .field_animated {
-    animation: 1s field-animation;
+    animation: .5s field-animation;
 }
 
 /* @keyframes field-animation {
@@ -341,7 +341,7 @@
     border-right: 1px solid #d5d5d5;
 }
 
-.rotate-tip {
+.tip {
     position: absolute;
     top: 470px;
     width: 500px;
@@ -352,6 +352,23 @@
     color: #0173c7;
     font-size: 30px;
     border: 1px dashed #d5d5d5;
+    cursor: pointer;
+}
+
+.finish {
+    border: 1px solid #d5d5d5;
+}
+
+.finish:hover {
+    background: #ececec;
+    border: 1px solid #cfcfcf;
+    color: #0460a1;
+}
+
+.greyed-out, .greyed-out:hover {
+    background: #f9f9f9;
+    border: 1px solid #d5d5d5;
+    color: #d5d5d5;
 }
 
 .ships-block {

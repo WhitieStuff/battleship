@@ -57,7 +57,7 @@ node_fieldBlocker.addEventListener('click', () => {
     setTimeout(() => {
         node.classList.remove('field_animated')
         node_shipContainers.me.classList.remove('field_animated')
-    }, 1000)
+    }, 500)
 })
 
 /**
@@ -84,6 +84,12 @@ let node_endGameTitle = document.getElementById('endGameTitle')
  * Node of the rotation tip.
  */
 let node_tip = document.getElementById('tip')
+
+/**
+ * Node of the finish placing button.
+ */
+let node_finish = document.getElementById('finish')
+node_finish.addEventListener('click', event => finishPlacing(event))
 
 /**
  * Node of the rotate-area.
@@ -215,10 +221,12 @@ function newGame() {
     
     if (layout == '0') {
         node_fieldBlocker.classList.remove('hidden')
+        node_finish.classList.remove('hidden')
         node_shipsBlock.classList.add('hidden')
     } else {
         node_shipsBlock.classList.remove('hidden')
         node_fieldBlocker.classList.add('hidden')
+        node_finish.classList.add('hidden')
     }
     
 
@@ -938,8 +946,26 @@ function getShip(sectorNode, remove) {
 
     clear(oldX, oldY)
     goDown(oldX, oldY)
-    console.log(shipSize)
-    console.log(shipStart)
+}
+
+/**
+ * Finishes placing and starts the game.
+ * @param {Event} event The event of the 'Finish placing' button click.
+ */
+function finishPlacing(event) {
+
+    let isAllShips
+    let ships
+
+    for (let i = 0; i <  node_shipContainers)
+    
+    let node = document.getElementsByClassName('field-container')[1]
+    node.classList.add('field_animated')
+    node_shipContainers.me.classList.add('field_animated')
+    setTimeout(() => {
+        node.classList.remove('field_animated')
+        node_shipContainers.me.classList.remove('field_animated')
+    }, 500)
 }
 
 
