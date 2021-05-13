@@ -186,6 +186,11 @@ let lastHits = {
 let animation
 
 /**
+ * Are all ships placed on the field.
+ */
+let isAllShips
+
+/**
  * Is the drag'n'drop ship vertical.
  */
 let isVertical
@@ -222,6 +227,7 @@ function newGame() {
     if (layout == '0') {
         node_fieldBlocker.classList.remove('hidden')
         node_finish.classList.remove('hidden')
+        node_finish.classList.add('greyed-out')
         node_shipsBlock.classList.add('hidden')
     } else {
         node_shipsBlock.classList.remove('hidden')
@@ -259,6 +265,7 @@ function newGame() {
         node_enemy_sectors[i].addEventListener('click', event => shoot(event, 'enemy'))
     }
 
+    node_endGameTitle.classList.add('hidden')
     node_endGame.classList.add('hidden')
     node_endGame.classList.remove('endGame-animation')
 
@@ -508,6 +515,14 @@ function checkDone(oldX, oldY, owner, makeHit) {
 
     let makeDone = () => {
         isDone = true
+        let shipNodes = document.getElementsByClassName(`ship-${owner}-${length}`)
+        console.log(shipNodes)
+        let marked = false
+        for (let i = 0; i <= 3; i++) {
+            if (marked || shipNodes[i].classList.contains(`ship-stroke`)) continue
+            shipNodes[i].classList.add(`ship-stroke`)
+            marked = true
+        }
         lastHits[owner] = null
         shipsLost[owner][length] = shipsLost[owner][length] - 1
         newX = 11
@@ -674,6 +689,7 @@ function endGame(owner) {
         node_endGameTitle.innerText = 'You won!'
     }
     openField(0, 0)
+    node_endGameTitle.classList.remove('hidden')
     node_endGame.classList.remove('hidden')
     node_endGame.classList.add('endGame-animation')
 }
@@ -717,8 +733,6 @@ function drawShip(size, owner) {
     newShip.classList.add('ship')
     newShip.classList.add(`ship-${owner}`)
     newShip.classList.add(`ship-${owner}-${size}`)
-    if (owner == 'me') 
-    newShip.testable = true
 
     container.appendChild(newShip)
     newShip.size = size
@@ -733,6 +747,7 @@ function drawShip(size, owner) {
 
     if (owner == 'me') {
         newShip.draggable = true
+        newShip.classList.add(`ship-draggable`)
         newShip.imageHorizontal = new Image()
         newShip.imageHorizontal.src = (`./images/ship-horizontal-${size}.png`)
         newShip.imageVertical = new Image()
@@ -774,7 +789,7 @@ function handleDragEnd(event, isNew) {
     if (isDragOk) {
         if (isNew) {
             event.target.draggable = false
-            event.target.classList.remove('ship-me')
+            event.target.classList.remove('ship-draggable')
         }
         placeShip(shipStart)
     } else {
@@ -786,6 +801,7 @@ function handleDragEnd(event, isNew) {
         }
     }
     node_tip.classList.add('hidden')
+    checkAllShips()
     
     run0to100(clearDragOverStyle)
 }
@@ -949,19 +965,39 @@ function getShip(sectorNode, remove) {
 }
 
 /**
+ * Checks if all the ships are placed on the field.
+ */
+function checkAllShips() {
+    for (let i = 0; i < node_ships.me.length; i++) {
+        if (!node_ships.me[i].classList.contains('ship-moved')) return isAllShips = false
+    }
+    isAllShips = true
+    node_finish.classList.remove('greyed-out')
+}
+
+/**
  * Finishes placing and starts the game.
  * @param {Event} event The event of the 'Finish placing' button click.
  */
 function finishPlacing(event) {
-
-    let isAllShips = true
-
-    console.log(node_ships.me[0])
-    for (let i = 0; i < node_ships.me.length; i++) {
-        if (!node_ships.me[i].classList.contains('ship-moved')) isAllShips = false
-    }
-
-    if (!isAllShips) {
+    if (isAllShips) {
+        for (let i = 1; i < 10; i++) for (let j = 1; j < 10; j++) {
+            document.getElementById(`me-${i}-${j}`).draggable = false
+        }
+        node_finish.classList.add('hidden')
+        node_fieldBlocker.classList.add('hidden')
+        node_endGame.classList.remove('hidden')
+        node_endGame.classList.add('endGame-animation')
+        isAllShips = false
+        for (let i = 0; i < node_ships.me.length; i++) {
+            node_ships.me[i].classList.remove('ship-draggable')
+            node_ships.me[i].classList.remove('ship-moved')
+        }
+        return setTimeout(() => {
+            node_endGame.classList.add('hidden')
+            node_endGame.classList.remove('endGame-animation')
+        }, 1000)
+    } else {
         let node = document.getElementsByClassName('field-container')[1]
         node.classList.add('field_animated')
         node_shipContainers.me.classList.add('field_animated')
@@ -970,8 +1006,6 @@ function finishPlacing(event) {
             node_shipContainers.me.classList.remove('field_animated')
         }, 500)
     }
-    
-    
 }
 
 

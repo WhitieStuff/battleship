@@ -311,17 +311,31 @@
     height: 40px;
 }
 
-.ship-me:hover {
+.ship-draggable:hover {
     transform: translateY(-2px);
 }
 
-.ship-me:hover .ship__sector {
+.ship-draggable:hover .ship__sector {
     background: #0460a1;
     cursor: pointer;
 }
 
 .ship-moved .ship__sector, .ship-moved:hover .ship__sector {
     background: #929292;
+}
+
+.ship-stroke .ship__sector {
+    background: #929292;
+    animation: .5s blow-ship;
+}
+
+@keyframes blow-ship {
+    from {
+        background-color: #B96F73;
+    }
+    to {
+        background-color: #929292;
+    }
 }
 
 .ship__sector {
