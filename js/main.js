@@ -185,14 +185,20 @@ let animation
 let isVertical
 
 /**
- * Do not rotate if true.
+ * The size of the gragged ship.
  */
-let rotatePause = false
+let shipSize
 
 /**
- * The element that is being dragged.
+ * True if it's a good place for the ship.
  */
-let dragEvent
+let isDragOk
+
+/**
+ * The sector where the manually placed ship starts.
+ */
+let shipStart
+
 
 /**
  * Starts a new game and redraws the fields.
@@ -279,6 +285,10 @@ function refreshSector(i, j, owner) {
     field[i][j] = {}
     field[i][j].status = 0
     field[i][j].opened = 0
+    //TODO: Change field[i][j] to the sector node.
+    //TODO: An object with CSS classes.
+
+    if (owner == 'me') newSector.addEventListener('dragenter', event => handleDragEnter(event))
 }
 
 /**
@@ -708,8 +718,8 @@ function drawShip(size, owner) {
         newShip.imageHorizontal.src = (`./images/ship-horizontal-${size}.png`)
         newShip.imageVertical = new Image()
         newShip.imageVertical.src = (`./images/ship-vertical-${size}.png`)
-        newShip.addEventListener('dragstart', event => dragStartHandler(event))
-        newShip.addEventListener('dragend', event => dragEndHandler(event))
+        newShip.addEventListener('dragstart', event => handleDragStart(event))
+        newShip.addEventListener('dragend', event => handleDragEnd(event))
     }
 }
 
@@ -717,22 +727,114 @@ function drawShip(size, owner) {
  * Handles the drag start of the ship.
  * @param {Event} event The event of drag start.
  */
-function dragStartHandler(event) {
+function handleDragStart(event) {
     let image = event.ctrlKey || event.altKey ? event.target.imageVertical : event.target.imageHorizontal
+    isVertical = event.ctrlKey || event.altKey ? true : false
     event.target.classList.add('ship-moved')
     node_tip.classList.remove('hidden')
-    event.dataTransfer.setDragImage(image, 15, 15)
-    isVertical = false
-    dragEvent = event
+    event.dataTransfer.setDragImage(image, 0, 0)
+    shipSize = event.target.size
 }
 
 /**
  * Handles the drag end of the ship.
  * @param {Event} event The event of the drag end.
  */
-function dragEndHandler(event) {
-    event.target.classList.remove('ship-moved')
+function handleDragEnd(event) {
+    if (isDragOk) {
+        event.target.draggable = false
+        event.target.classList.remove('ship-me')
+        placeShip(shipStart)
+    } else {
+        event.target.classList.remove('ship-moved')
+    }
     node_tip.classList.add('hidden')
+    
+    run0to100(clearDragOverStyle)
+}
+
+/**
+ * Handles the drag over a field sectopr.
+ * @param {Event} event The event of the drag over.
+ */
+function handleDragEnter(event) {
+    event.preventDefault()
+    run0to100(clearDragOverStyle)
+    isDragOk = checkDragOk(event.target)
+    showGhostShip(event.target)
+}
+
+/**
+ * 
+ * @param {Element} sector 
+ */
+function clearDragOverStyle(x, y) {
+    let sector = document.getElementById(`me-${x}-${y}`)
+    sector.classList.remove('field__sector-dragover-ok')
+    sector.classList.remove('field__sector-dragover-bad')
+}
+
+/**
+ * Cheks if the current place is ok for the ship.
+ * @param {Element} sectorNode Node of the current drag-over sector.
+ */
+function checkDragOk(sectorNode) {
+    let id = sectorNode.id
+    let x = parseInt(id.split('-')[1])
+    let y = parseInt(id.split('-')[2])
+    let field = fields.me
+    for (let i = 0; i < shipSize; i++) {
+        let nextX = isVertical ? x : x + i
+        let nextY = isVertical ? y + i : y
+        if (!field[nextX]) return false
+        let nextSector = field[nextX][nextY]
+        if (!nextSector || nextSector.status != '0') return false
+    }
+
+    shipStart = sectorNode
+    return true
+}
+
+/**
+ * Shows the hypothetical ship on the field.
+ * @param {Element} sectorNode Node of the current drag-over sector.
+ */
+function showGhostShip(sectorNode) {
+    let id = sectorNode.id
+    let x = parseInt(id.split('-')[1])
+    let y = parseInt(id.split('-')[2])
+    let type = isDragOk ? 'ok' : 'bad'
+    for (let i = 0; i < shipSize; i++) {
+        let nextX = isVertical ? x : x + i
+        let nextY = isVertical ? y + i : y
+        let nextSector = document.getElementById(`me-${nextX}-${nextY}`)
+        if (nextSector && !nextSector.status) nextSector.classList.add(`field__sector-dragover-${type}`)
+    }
+}
+
+/**
+ * Places the ship on the field.
+ * @param {Element} sectorNode Node of the current drag-over sector.
+ */
+function placeShip(sectorNode) {
+    console.log(sectorNode)
+    let id = sectorNode.id
+    let x = parseInt(id.split('-')[1])
+    let y = parseInt(id.split('-')[2])
+    let field = fields.me
+    for (let i = 0; i < shipSize; i++) {
+        let nextX = isVertical ? x : x + i
+        let nextY = isVertical ? y + i : y
+        markSector(nextX, nextY, 'me', 1, false, false)
+    }
+
+    // Runs around the ship and marks sectors as 'next to the ship'.
+    for (let i = -1; i <= shipSize; i++) for (let j = -1; j <= 1; j++) {
+        let xi = !isVertical ? x + i : x + j
+        let yi = !isVertical ? y + j : y + i
+        if (xi > 9 || yi > 9 || xi < 0 || yi < 0 || field[xi][yi].status) continue; 
+        markSector(xi, yi, 'me', 4, false, true)
+    }
 }
 
 

@@ -163,6 +163,14 @@
     transition: none;
 }
 
+.field__sector-dragover-ok {
+    background: #0460a1;
+}
+
+.field__sector-dragover-bad {
+    background: #929292;
+}
+
 .field__sector-enemy {
     background: #e2e2e2;
     cursor: pointer;
@@ -294,7 +302,6 @@
     flex-direction: row;
     align-items: center;
     height: 40px;
-    cursor: pointer;
 }
 
 .ship-me:hover {
@@ -303,9 +310,10 @@
 
 .ship-me:hover .ship__sector {
     background: #0460a1;
+    cursor: pointer;
 }
 
-.ship-moved .ship__sector {
+.ship-moved .ship__sector, .ship-moved:hover .ship__sector {
     background: #929292;
 }
 
