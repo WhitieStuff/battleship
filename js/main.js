@@ -429,7 +429,7 @@ function shoot(event, owner) {
         console.log(`%cHit.\n`, color)
 
 
-        if (--field.shipSectors == 0) return endGame(owner)
+        if (--field.shipSectors == 0) endGame(owner)
         if (myMove) return checkDone(x, y, owner, false)
         if (!myMove) return checkDone(x, y, owner, true)
     }
