@@ -954,18 +954,24 @@ function getShip(sectorNode, remove) {
  */
 function finishPlacing(event) {
 
-    let isAllShips
-    let ships
+    let isAllShips = true
 
-    for (let i = 0; i <  node_shipContainers)
+    console.log(node_ships.me[0])
+    for (let i = 0; i < node_ships.me.length; i++) {
+        if (!node_ships.me[i].classList.contains('ship-moved')) isAllShips = false
+    }
+
+    if (!isAllShips) {
+        let node = document.getElementsByClassName('field-container')[1]
+        node.classList.add('field_animated')
+        node_shipContainers.me.classList.add('field_animated')
+        return setTimeout(() => {
+            node.classList.remove('field_animated')
+            node_shipContainers.me.classList.remove('field_animated')
+        }, 500)
+    }
     
-    let node = document.getElementsByClassName('field-container')[1]
-    node.classList.add('field_animated')
-    node_shipContainers.me.classList.add('field_animated')
-    setTimeout(() => {
-        node.classList.remove('field_animated')
-        node_shipContainers.me.classList.remove('field_animated')
-    }, 500)
+    
 }
 
 
