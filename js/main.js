@@ -185,6 +185,11 @@ let animation
 let isVertical
 
 /**
+ * Was the drag'n'drop ship vertical.
+ */
+let wasVertical
+
+/**
  * The size of the gragged ship.
  */
 let shipSize
@@ -353,6 +358,12 @@ function markSector (x, y, owner, status, open, noClass) {
     sector.classList.remove(`field__sector-ship-enemy`)
     sector.classList.remove('field__sector-hit-me')
     sector.classList.remove('field__sector-hit-enemy')
+
+    if (layout == '0' && owner == 'me' && status == 1) {
+        sector.draggable = true
+        sector.addEventListener('dragstart', event => handleDragStart(event, false))
+        sector.addEventListener('dragend', event => handleDragEnd(event, false))
+    }
 
     if (noClass) return
 
@@ -718,35 +729,53 @@ function drawShip(size, owner) {
         newShip.imageHorizontal.src = (`./images/ship-horizontal-${size}.png`)
         newShip.imageVertical = new Image()
         newShip.imageVertical.src = (`./images/ship-vertical-${size}.png`)
-        newShip.addEventListener('dragstart', event => handleDragStart(event))
-        newShip.addEventListener('dragend', event => handleDragEnd(event))
+        newShip.addEventListener('dragstart', event => handleDragStart(event, true))
+        newShip.addEventListener('dragend', event => handleDragEnd(event, true))
     }
 }
 
 /**
  * Handles the drag start of the ship.
  * @param {Event} event The event of drag start.
+ * @param {boolean} isNew True if the ship is new. False if it's from the field.
  */
-function handleDragStart(event) {
-    let image = event.ctrlKey || event.altKey ? event.target.imageVertical : event.target.imageHorizontal
-    isVertical = event.ctrlKey || event.altKey ? true : false
-    event.target.classList.add('ship-moved')
+function handleDragStart(event, isNew) {
+    isDragOk = false
     node_tip.classList.remove('hidden')
+    let image
+    if (isNew) {
+        image = event.ctrlKey || event.altKey ? event.target.imageVertical : event.target.imageHorizontal
+        isVertical = event.ctrlKey || event.altKey ? true : false
+        event.target.classList.add('ship-moved')
+        shipSize = event.target.size
+    } else {
+        getShip(event.target)
+        isVertical = event.ctrlKey || event.altKey ? !wasVertical : wasVertical
+        image = new Image()
+        image.src = isVertical ? `./images/ship-vertical-${shipSize}.png` : `./images/ship-horizontal-${shipSize}.png` 
+    }
     event.dataTransfer.setDragImage(image, 0, 0)
-    shipSize = event.target.size
 }
 
 /**
  * Handles the drag end of the ship.
  * @param {Event} event The event of the drag end.
+ * @param {boolean} isNew True if the ship is new. False if it's from the field.
  */
-function handleDragEnd(event) {
+function handleDragEnd(event, isNew) {
     if (isDragOk) {
-        event.target.draggable = false
-        event.target.classList.remove('ship-me')
+        if (isNew) {
+            event.target.draggable = false
+            event.target.classList.remove('ship-me')
+        }
         placeShip(shipStart)
     } else {
-        event.target.classList.remove('ship-moved')
+        if (isNew) {
+            event.target.classList.remove('ship-moved')
+        } else {
+            isVertical = wasVertical
+            placeShip(shipStart)
+        }
     }
     node_tip.classList.add('hidden')
     
@@ -787,8 +816,14 @@ function checkDragOk(sectorNode) {
         let nextX = isVertical ? x : x + i
         let nextY = isVertical ? y + i : y
         if (!field[nextX]) return false
-        let nextSector = field[nextX][nextY]
-        if (!nextSector || nextSector.status != '0') return false
+        // Runs around the ship and marks sectors as 'next to the ship'.
+        for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
+            if (field[nextX + i] && field[nextX + i][nextY + j]) {
+                let sector = field[nextX + i][nextY + j]
+                if (!(sector.status == '0' || sector.status == '4')) return false
+            }
+        }
+        
     }
 
     shipStart = sectorNode
@@ -817,7 +852,6 @@ function showGhostShip(sectorNode) {
  * @param {Element} sectorNode Node of the current drag-over sector.
  */
 function placeShip(sectorNode) {
-    console.log(sectorNode)
     let id = sectorNode.id
     let x = parseInt(id.split('-')[1])
     let y = parseInt(id.split('-')[2])
@@ -835,6 +869,77 @@ function placeShip(sectorNode) {
         if (xi > 9 || yi > 9 || xi < 0 || yi < 0 || field[xi][yi].status) continue; 
         markSector(xi, yi, 'me', 4, false, true)
     }
+}
+
+/**
+ * Gets the ship from the field.
+ * @param {Element} sectorNode Node of the current drag-start sector.
+ * @param {boolean} remove Remove old ship if true.
+ */
+function getShip(sectorNode, remove) {
+    let id = sectorNode.id
+    let oldX = parseInt(id.split('-')[1])
+    let oldY = parseInt(id.split('-')[2])
+    let field = fields.me
+    shipSize = 1
+    wasVertical = false
+    shipStart = sectorNode
+
+    let clear = (x, y) => {
+        // Runs around the ship and marks sectors as 'next to the ship'.
+        for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
+            if (field[x + i] && field[x + i][y + j]) setTimeout(() => {
+                markSector(x + i, y + j, 'me', 0, false, false)
+            }, 5)
+        }
+    }
+
+    
+    let goDown = (x, y) => {
+        newY = y + 1
+        if (field[x][newY] && field[x][newY].status == '1') {
+            shipSize++
+            wasVertical = true
+            clear(x, newY)
+            return goDown(x, newY)
+        } 
+        goUp(oldX, oldY)
+    }
+    let goUp = (x, y) => {
+        newY = y - 1
+        if (field[x][newY] && field[x][newY].status == '1') {
+            shipSize++
+            wasVertical = true
+            shipStart = document.getElementById(`me-${x}-${newY}`)
+            clear(x, newY)
+            return goUp(x, newY)
+        } 
+        goRight(oldX, oldY)
+    }
+    let goRight = (x, y) => {
+        if (wasVertical) return
+        newX = x + 1
+        if (field[newX] && field[newX][y] && field[newX][y].status == '1') {
+            shipSize++
+            clear(newX, y)
+            return goRight(newX, y)
+        } 
+        goLeft(oldX, y)
+    }
+    let goLeft = (x, y) => {
+        newX = x - 1
+        if (field[newX] && field[newX][y] && field[newX][y].status == '1') {
+            shipSize++
+            shipStart = document.getElementById(`me-${newX}-${y}`)
+            clear(newX, y)
+            return goLeft(newX, oldY)
+        }
+    }
+
+    clear(oldX, oldY)
+    goDown(oldX, oldY)
+    console.log(shipSize)
+    console.log(shipStart)
 }
 
 
