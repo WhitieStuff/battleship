@@ -65,26 +65,6 @@ let shipSizes = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
 /** Possible statuses of a sector. */
 let statuses = ["empty", "ship", "hit", "miss", "next"]
 
-/** Fields in the game with all sectors info: **me/enemy**. */
-let fields = {
-    enemy: {
-        /** Number of ship-sectors lost in the current game. */
-        shipSectors: 20,
-        /** Ships lost during the game. */
-        shipsLost: {4:1, 3:2, 2:3, 1:4},
-        /** Last success hits at the field. Needed to continue shooting around the last hit. */
-        lastHit: null
-    },
-    me: {
-        /** Number of ship-sectors lost in the current game. */
-        shipSectors: 20,
-        /** Ships lost during the game. */
-        shipsLost: {4:1, 3:2, 2:3, 1:4},
-        /** Last success hits at the field. Needed to continue shooting around the last hit. */
-        lastHit: null
-    }
-}
-
 /** Variables for the drag'n'drop ships placing. */
 let layout = {
     /** Are all ships placed on the field. */
@@ -173,12 +153,15 @@ function newGame() {
 
     nodes.shipsLists.me.innerHTML = ""
     nodes.shipsLists.enemy.innerHTML = ""
-    fields.enemy.shipSectors = 20
-    fields.me.shipSectors = 20
-    fields.enemy.shipsLost = {4:1, 3:2, 2:3, 1:4}
-    fields.me.shipsLost = {4:1, 3:2, 2:3, 1:4}
-    fields.enemy.lastHit = null
-    fields.me.lastHit = null
+    /** Number of ship-sectors lost in the current game. */
+    nodes.fields.enemy.shipSectors = 20
+    nodes.fields.me.shipSectors = 20
+    /** Ships lost during the game. */
+    nodes.fields.enemy.shipsLost = {4:1, 3:2, 2:3, 1:4}
+    nodes.fields.me.shipsLost = {4:1, 3:2, 2:3, 1:4}
+    /** Last success hits at the field. Needed to continue shooting around the last hit. */
+    nodes.fields.enemy.lastHit = null
+    nodes.fields.me.lastHit = null
 
     myMove = true
     skipHit = mode == "1" ? 0 : 3
@@ -193,7 +176,7 @@ function newGame() {
     /** Enemy's sectors for event listeners. */
     let node_enemy_sectors = document.getElementsByClassName('field__sector-enemy')
     for (let i = 0; i < 100; i++) {
-        node_enemy_sectors[i].addEventListener('click', event => shoot(event.target, 'enemy'))
+        node_enemy_sectors[i].addEventListener('click', event => event.target.shoot())
     }
 
     hide(nodes.endGameTitle)
@@ -213,9 +196,9 @@ function newGame() {
  * @param {string} owner Field owner (me/enemy).
  */
 function refreshSector(i, j, owner) {
-    if (fields[owner][i] && fields[owner][i][j]) nodes.fields[owner].removeChild(fields[owner][i][j])
+    if (nodes.fields[owner][i] && nodes.fields[owner][i][j]) nodes.fields[owner].removeChild(nodes.fields[owner][i][j])
 
-    let field = fields[owner]
+    let field = nodes.fields[owner]
     let node = nodes.fields[owner]
     let newSector = document.createElement('div')
     newSector.classList.add('field__sector')
@@ -248,7 +231,7 @@ function refreshSector(i, j, owner) {
  * @param {*} owner Field owner (me/enemy).
  */
 function createShip(size, owner) {
-    let field = fields[owner]
+    let field = nodes.fields[owner]
     let noClass = owner == 'enemy'
     
     let horizontal = Math.round(Math.random())
@@ -285,7 +268,7 @@ function createShip(size, owner) {
  * @param {boolean} opened Mark as opened if true.
  * @param {boolean} noClass Do not add class if true.
  */
-function mark (status, open, noClass) {
+function mark(status, open, noClass) {
     let sector = this
     let owner = this.owner
 
@@ -321,6 +304,8 @@ function shoot() {
     let y = sector.y
     owner = sector.owner
     let field = sector.parentNode
+    let fieldMe = nodes.fields.me
+    let fieldEnemy = nodes.fields.enemy
     let color = owner == 'me' ? 'color: red;' : 'color: green;'
 
     console.log(`%cShot at ${owner}: ${x} ${y}`, color)
@@ -334,9 +319,9 @@ function shoot() {
         myMove = !myMove
         console.log(`%cMissed.\n`, color)
 
-        if (myMove && fields.me.lastHit) fields.me.lastHit.checkDone(false)
-        if (!myMove && fields.enemy.lastHit) fields.enemy.lastHit.checkDone(false)
-        if (!myMove && fields.me.lastHit) return fields.me.lastHit.checkDone(true)
+        if (myMove && fieldMe.lastHit) fieldMe.lastHit.checkDone(false)
+        if (!myMove && fieldEnemy.lastHit) fieldEnemy.lastHit.checkDone(false)
+        if (!myMove && fieldMe.lastHit) return fieldMe.lastHit.checkDone(true)
         if (!myMove) return shootRandom()
     }
 
@@ -358,17 +343,12 @@ function shoot() {
     }
 }
 
-/**
- * Enemy hits at the given coordinated.
- * 
- * @param {number} x Coordinate X.
- * @param {number} y Coordinate Y.
- */
+/** Enemy hits at the given coordinated. */
 function enemyMove(sector) {
     show(nodes.animation)
     setTimeout(() => {
         hide(nodes.animation)
-        shoot(sector, 'me')
+        sector.shoot()
     }, 500)
     
     
@@ -378,7 +358,7 @@ function enemyMove(sector) {
  * Generates random coordinates for the next enemy hit.
  */
 function shootRandom() {
-    let field = fields.me
+    let field = nodes.fields.me
     let x = getRandom()
     let y = getRandom()
     let sector = field[x][y]
@@ -623,7 +603,7 @@ function openField(x, y) {
         y = 0
     }
     if (x > 9) return
-    let field = fields['enemy']
+    let field = nodes.fields['enemy']
     let sector = field[y][x]
 
     setTimeout(() => {
@@ -736,7 +716,7 @@ function handleDragEnter(event) {
  * @param {Element} sector 
  */
 function clearDragOverStyle(x, y) {
-    let sector = fields.me[x][y]
+    let sector = nodes.fields.me[x][y]
     sector.classList.remove('field__sector-dragover-ok')
     sector.classList.remove('field__sector-dragover-bad')
 }
@@ -748,7 +728,7 @@ function clearDragOverStyle(x, y) {
 function checkDragOk(sector) {
     let x = sector.x
     let y = sector.y
-    let field = fields.me
+    let field = nodes.fields.me
     for (let i = 0; i < layout.shipSize; i++) {
         let nextX = layout.isVertical ? x : x + i
         let nextY = layout.isVertical ? y + i : y
@@ -778,8 +758,8 @@ function showGhostShip(sector) {
     for (let i = 0; i < layout.shipSize; i++) {
         let nextX = layout.isVertical ? x : x + i
         let nextY = layout.isVertical ? y + i : y
-        let nextSector = fields.me[nextX] && fields.me[nextX][nextY]
-        if (fields.me[nextX] && nextSector && nextSector.status != '1') nextSector.classList.add(`field__sector-dragover-${type}`)
+        let nextSector = nodes.fields.me[nextX] && nodes.fields.me[nextX][nextY]
+        if (nodes.fields.me[nextX] && nextSector && nextSector.status != '1') nextSector.classList.add(`field__sector-dragover-${type}`)
     }
 }
 
@@ -790,7 +770,7 @@ function showGhostShip(sector) {
 function placeShip(sector) {
     let x = sector.x
     let y = sector.y
-    let field = fields.me
+    let field = nodes.fields.me
     for (let i = 0; i < layout.shipSize; i++) {
         let nextX = layout.isVertical ? x : x + i
         let nextY = layout.isVertical ? y + i : y
@@ -813,7 +793,7 @@ function placeShip(sector) {
 function getShip(sector) {
     let oldX = sector.x
     let oldY = sector.y
-    let field = fields.me
+    let field = nodes.fields.me
     layout.shipSize = 1
     layout.wasVertical = false
     layout.shipStart = sector
@@ -843,7 +823,7 @@ function getShip(sector) {
         if (field[x][newY] && field[x][newY].status == '1') {
             layout.shipSize++
             layout.wasVertical = true
-            layout.shipStart = fields.me[x][newY]
+            layout.shipStart = nodes.fields.me[x][newY]
             clear(x, newY)
             return goUp(x, newY)
         } 
@@ -863,7 +843,7 @@ function getShip(sector) {
         newX = x - 1
         if (field[newX] && field[newX][y] && field[newX][y].status == '1') {
             layout.shipSize++
-            layout.shipStart = fields.me[newX][y]
+            layout.shipStart = nodes.fields.me[newX][y]
             clear(newX, y)
             return goLeft(newX, oldY)
         }
@@ -891,7 +871,7 @@ function checkAllShips() {
 function finishPlacing() {
     if (layout.isAllShips) {
         for (let i = 1; i < 10; i++) for (let j = 1; j < 10; j++) {
-            fields.me[i][j].draggable = false
+            nodes.fields.me[i][j].draggable = false
         }
         hide(nodes.finish)
         hide(nodes.fieldBlocker)
