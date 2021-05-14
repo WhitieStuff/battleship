@@ -516,7 +516,6 @@ function checkDone(oldX, oldY, owner, makeHit) {
     let makeDone = () => {
         isDone = true
         let shipNodes = document.getElementsByClassName(`ship-${owner}-${length}`)
-        console.log(shipNodes)
         let marked = false
         for (let i = 0; i <= 3; i++) {
             if (marked || shipNodes[i].classList.contains(`ship-stroke`)) continue
