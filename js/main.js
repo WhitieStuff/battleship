@@ -269,16 +269,6 @@ function newGame() {
     console.log(`%cNew game is started.\nGame mode: ${modes[mode]}.\n${skipHit} enemy's hits will be skipped.\nChosen layout: ${layouts[layout]}\n`, `color: green;`)
 }
 
-/**
- * Runs the 10x10 matrix and calls a callback function for each sector.
- * 
- * @param {function} callback Callback for each sector.
- * @param {*} owner Field owner (me/enemy).
- */
-function run0to100 (callback, owner) {
-    for (let i = 0; i < 10; i++) for (let j = 0; j < 10; j++) callback(j, i, owner)
-}
-
 
 /**
  * Clears the given sector.
@@ -1014,6 +1004,16 @@ function finishPlacing() {
  */
 function hide(node) {
     node.classList.add('hidden')
+}
+
+/**
+ * Runs the 10x10 matrix and calls a callback function for each sector.
+ * 
+ * @param {function} callback Callback for each sector.
+ * @param {*} owner Field owner (me/enemy).
+ */
+function run0to100 (callback, owner) {
+    for (let i = 0; i < 10; i++) for (let j = 0; j < 10; j++) callback(j, i, owner)
 }
 
 // *****===== END OF SERVICE =====*****
