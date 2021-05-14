@@ -65,26 +65,6 @@ let shipSizes = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
 /** Possible statuses of a sector. */
 let statuses = ["empty", "ship", "hit", "miss", "next"]
 
-/** Fields in the game with all sectors info: **me/enemy**. */
-let fields = {
-    enemy: {
-        /** Number of ship-sectors lost in the current game. */
-        shipSectors: 20,
-        /** Ships lost during the game. */
-        shipsLost: {4:1, 3:2, 2:3, 1:4},
-        /** Last success hits at the field. Needed to continue shooting around the last hit. */
-        lastHits: null
-    },
-    me: {
-        /** Number of ship-sectors lost in the current game. */
-        shipSectors: 20,
-        /** Ships lost during the game. */
-        shipsLost: {4:1, 3:2, 2:3, 1:4},
-        /** Last success hits at the field. Needed to continue shooting around the last hit. */
-        lastHits: null
-    }
-}
-
 /** Variables for the drag'n'drop ships placing. */
 let layout = {
     /** Are all ships placed on the field. */
@@ -173,12 +153,15 @@ function newGame() {
 
     nodes.shipsLists.me.innerHTML = ""
     nodes.shipsLists.enemy.innerHTML = ""
-    fields.enemy.shipSectors = 20
-    fields.me.shipSectors = 20
-    fields.enemy.shipsLost = {4:1, 3:2, 2:3, 1:4}
-    fields.me.shipsLost = {4:1, 3:2, 2:3, 1:4}
-    fields.enemy.lastHits = null
-    fields.me.lastHits = null
+    /** Number of ship-sectors lost in the current game. */
+    nodes.fields.enemy.shipSectors = 20
+    nodes.fields.me.shipSectors = 20
+    /** Ships lost during the game. */
+    nodes.fields.enemy.shipsLost = {4:1, 3:2, 2:3, 1:4}
+    nodes.fields.me.shipsLost = {4:1, 3:2, 2:3, 1:4}
+    /** Last success hits at the field. Needed to continue shooting around the last hit. */
+    nodes.fields.enemy.lastHit = null
+    nodes.fields.me.lastHit = null
 
     myMove = true
     skipHit = mode == "1" ? 0 : 3
@@ -193,7 +176,7 @@ function newGame() {
     /** Enemy's sectors for event listeners. */
     let node_enemy_sectors = document.getElementsByClassName('field__sector-enemy')
     for (let i = 0; i < 100; i++) {
-        node_enemy_sectors[i].addEventListener('click', event => shoot(event.target, 'enemy'))
+        node_enemy_sectors[i].addEventListener('click', event => event.target.shoot())
     }
 
     hide(nodes.endGameTitle)
@@ -213,9 +196,9 @@ function newGame() {
  * @param {string} owner Field owner (me/enemy).
  */
 function refreshSector(i, j, owner) {
-    if (fields[owner][i] && fields[owner][i][j]) nodes.fields[owner].removeChild(fields[owner][i][j])
+    if (nodes.fields[owner][i] && nodes.fields[owner][i][j]) nodes.fields[owner].removeChild(nodes.fields[owner][i][j])
 
-    let field = fields[owner]
+    let field = nodes.fields[owner]
     let node = nodes.fields[owner]
     let newSector = document.createElement('div')
     newSector.classList.add('field__sector')
@@ -230,6 +213,9 @@ function refreshSector(i, j, owner) {
     newSector.owner = owner
 
     newSector.mark = mark
+    newSector.shoot = shoot
+    newSector.checkDone = checkDone
+    newSector.markDone = markDone
 
     field[i] = field[i] ? field[i] : {}
     field[i][j] = newSector
@@ -245,7 +231,7 @@ function refreshSector(i, j, owner) {
  * @param {*} owner Field owner (me/enemy).
  */
 function createShip(size, owner) {
-    let field = fields[owner]
+    let field = nodes.fields[owner]
     let noClass = owner == 'enemy'
     
     let horizontal = Math.round(Math.random())
@@ -282,7 +268,7 @@ function createShip(size, owner) {
  * @param {boolean} opened Mark as opened if true.
  * @param {boolean} noClass Do not add class if true.
  */
-function mark (status, open, noClass) {
+function mark(status, open, noClass) {
     let sector = this
     let owner = this.owner
 
@@ -311,15 +297,15 @@ function mark (status, open, noClass) {
     sector.classList.add(`field__sector-${statuses[status]}${postfix}`)
 }
 
-/**
- * Hits the given sector.
- * @param {Element} sector Sector of the click.
- * @param {string} owner Field owner (me/enemy).
- */
-function shoot(sector, owner) {
+/** Hits the given sector. */
+function shoot() {
+    let sector = this
     let x = sector.x
     let y = sector.y
-    let field = fields[owner]
+    owner = sector.owner
+    let field = sector.parentNode
+    let fieldMe = nodes.fields.me
+    let fieldEnemy = nodes.fields.enemy
     let color = owner == 'me' ? 'color: red;' : 'color: green;'
 
     console.log(`%cShot at ${owner}: ${x} ${y}`, color)
@@ -333,9 +319,9 @@ function shoot(sector, owner) {
         myMove = !myMove
         console.log(`%cMissed.\n`, color)
 
-        if (myMove && fields.me.lastHits) checkDone(fields.me.lastHits.x, fields.me.lastHits.y, 'me', false)
-        if (!myMove && fields.enemy.lastHits) checkDone(fields.enemy.lastHits.x, fields.enemy.lastHits.y, 'enemy', false)
-        if (!myMove && fields.me.lastHits) return checkDone(fields.me.lastHits.x, fields.me.lastHits.y, 'me', true)
+        if (myMove && fieldMe.lastHit) fieldMe.lastHit.checkDone(false)
+        if (!myMove && fieldEnemy.lastHit) fieldEnemy.lastHit.checkDone(false)
+        if (!myMove && fieldMe.lastHit) return fieldMe.lastHit.checkDone(true)
         if (!myMove) return shootRandom()
     }
 
@@ -347,28 +333,22 @@ function shoot(sector, owner) {
             return shootRandom()
         }
         sector.mark(2, true, false)
-        field.lastHits = {x, y}
+        field.lastHit = sector
         console.log(`%cHit.\n`, color)
 
 
         if (--field.shipSectors == 0) endGame(owner)
-        if (myMove) return checkDone(x, y, owner, false)
-        if (!myMove) return checkDone(x, y, owner, true)
+        if (myMove) return sector.checkDone(false)
+        if (!myMove) return sector.checkDone(true)
     }
 }
 
-/**
- * Enemy hits at the given coordinated.
- * 
- * @param {number} x Coordinate X.
- * @param {number} y Coordinate Y.
- */
-function enemyMove(x, y) {
+/** Enemy hits at the given coordinated. */
+function enemyMove(sector) {
     show(nodes.animation)
     setTimeout(() => {
         hide(nodes.animation)
-        let sector = fields.me[x][y]
-        shoot(sector, 'me')
+        sector.shoot()
     }, 500)
     
     
@@ -378,34 +358,33 @@ function enemyMove(x, y) {
  * Generates random coordinates for the next enemy hit.
  */
 function shootRandom() {
-    let field = fields.me
+    let field = nodes.fields.me
     let x = getRandom()
     let y = getRandom()
+    let sector = field[x][y]
     // Timeout neede because maximum callstack may be exceeded.
-    if (field[x][y].opened) return setTimeout(() => { shootRandom() }, 0)
-    enemyMove(x, y)
+    if (sector.opened) return setTimeout(() => { shootRandom() }, 0)
+    enemyMove(sector)
 }
 
 /**
  * Checks if the whole ship killed with the last hit.
- * 
- * @param {number} x Coordinate X.
- * @param {number} y Coordinate Y.
- * @param {string} owner Field owner (me/enemy).
  * @param {boolean} makeHit Makes next hit if true.
  * @returns {boolean} Is the whole ship killed.
  */
-function checkDone(oldX, oldY, owner, makeHit) {
-    let field = fields[owner]
+function checkDone(makeHit) {
+    let oldSector = this
+    let field = oldSector.parentNode
+    let owner = oldSector.owner
 
     /**
      * Is the given sector unknown.
      */
-    let isUnknown = (x, y) => field[x] && field[x][y] && !field[x][y].opened
+    let isUnknown = (sector) => sector && !sector.opened
     /**
      * Is the given sector a hit ship.
      */
-    let isHit = (x, y) => field[x] && field[x][y] && field[x][y].status == 2
+    let isHit = (sector) => sector && sector.status == 2
     /**
      * Is the given ship the biggest one lost.
      */
@@ -428,13 +407,12 @@ function checkDone(oldX, oldY, owner, makeHit) {
     let vertical = false
     let doneUp = false
     let doneDown = false
-    let isDone = false
 
     let newX = 11
     let newY = 11
+    let newSector = null
 
     let makeDone = () => {
-        isDone = true
         let shipNodes = document.getElementsByClassName(`ship-${owner}-${length}`)
         let marked = false
         for (let i = 0; i <= 3; i++) {
@@ -442,106 +420,99 @@ function checkDone(oldX, oldY, owner, makeHit) {
             shipNodes[i].classList.add(`ship-stroke`)
             marked = true
         }
-        field.lastHits = null
+        field.lastHit = null
         field.shipsLost[length] = field.shipsLost[length] - 1
-        newX = 11
-        newY = 11
-        markDone(oldX, oldY, owner)
+        newSector = null
+        oldSector.markDone()
     }
 
 
-    let goRight = (x, y) => {
-        x++
-        if (isHit(x, y)) {
+    let goRight = (sector) => {
+        right = getRight(sector)
+        if (isHit(right)) {
             length++
             horizontal = true
-            return goRight(x, y)
+            return goRight(right)
         } else {
-            if (isUnknown(x, y)) {
-                newX = x
-                newY = y
+            if (isUnknown(right)) {
+                newSector = right
             } else {
                 doneRight = true
             }
-            return goLeft(oldX, oldY)
+            return goLeft(oldSector)
         }
     }
 
-    let goLeft = (x, y) => {
-        x--
-        if (isHit(x, y)) {
+    let goLeft = (sector) => {
+        left = getLeft(sector)
+        if (isHit(left)) {
             length++
             horizontal = true
-            return goLeft(x, y)
+            return goLeft(left)
         } else {
-            if (isUnknown(x, y)) {
-                newX = x
-                newY = y
+            if (isUnknown(left)) {
+                newSector = left
             } else {
                 doneLeft = true
             }
-            if (!horizontal) return goUp(oldX, oldY)
+            if (!horizontal) return goUp(oldSector)
         }
     }
 
-    let goUp = (x, y) => {
-        y--
-        if (isHit(x, y)) {
+    let goUp = (sector) => {
+        up = getUp(sector)
+        if (isHit(up)) {
             length++
             vertical = true
-            return goUp(x, y)
+            return goUp(up)
         } else {
-            if (isUnknown(x, y)) {
-                newX = x
-                newY = y
+            if (isUnknown(up)) {
+                newSector = up
             } else {
                 doneUp = true
             }
-            return goDown(oldX, oldY)
+            return goDown(oldSector)
         }
     }
 
-    let goDown = (x, y) => {
-        y++
-        if (isHit(x, y)) {
+    let goDown = (sector) => {
+        down = getDown(sector)
+        if (isHit(down)) {
             length++
             vertical = true
-            return goDown(x, y)
+            return goDown(down)
         } else {
-            if (isUnknown(x, y)) {
-                newX = x
-                newY = y
+            if (isUnknown(down)) {
+                newSector = down
             } else {
-                if (!isHit(x, y)) doneDown = true
+                if (!isHit(down)) doneDown = true
             }
         }
     }
 
-    goRight(oldX, oldY)
+    goRight(oldSector)
 
     if (isBiggest(length) || horizontal && doneRight && doneLeft || vertical && doneUp && doneDown || doneRight && doneLeft && doneUp && doneDown) {
         makeDone()
     }
 
     if (makeHit) {
-        console.log('\nEnemy shoots')
-        if (newX == 11) return shootRandom()
-        enemyMove(newX, newY)
+        if (!newSector) return shootRandom()
+        enemyMove(newSector)
     }
     
 }
 
-/**
- * Marks the given ship as killed and outlines it.
- * 
- * @param {number} oldX Coordinate X.
- * @param {number} oldY Coordinate Y.
- * @param {boolean} owner Field owner (me/enemy).
- */
-function markDone(oldX, oldY, owner) {
+/** Marks the given ship as killed and outlines it. */
+function markDone() {
+    let sector = this
+    let field = sector.parentNode
+    let owner = sector.owner
+    let oldX = sector.x
+    let oldY = sector.y
+
     let noClass = owner == 'me'
     console.log('The whole ship is done.\n')
-    let field = fields[owner]
     let isHit = (x, y) => field[x] && field[x][y] && field[x][y].status == 2
     let isUnknown = (x, y) => field[x] && field[x][y] && !field[x][y].opened
 
@@ -625,7 +596,7 @@ function openField(x, y) {
         y = 0
     }
     if (x > 9) return
-    let field = fields['enemy']
+    let field = nodes.fields['enemy']
     let sector = field[y][x]
 
     setTimeout(() => {
@@ -723,7 +694,7 @@ function handleDragEnd(event, isNew) {
 }
 
 /**
- * Handles the drag over a field sectopr.
+ * Handles the drag over a field sector.
  * @param {Event} event The event of the drag over.
  */
 function handleDragEnter(event) {
@@ -738,7 +709,7 @@ function handleDragEnter(event) {
  * @param {Element} sector 
  */
 function clearDragOverStyle(x, y) {
-    let sector = fields.me[x][y]
+    let sector = nodes.fields.me[x][y]
     sector.classList.remove('field__sector-dragover-ok')
     sector.classList.remove('field__sector-dragover-bad')
 }
@@ -750,7 +721,7 @@ function clearDragOverStyle(x, y) {
 function checkDragOk(sector) {
     let x = sector.x
     let y = sector.y
-    let field = fields.me
+    let field = nodes.fields.me
     for (let i = 0; i < layout.shipSize; i++) {
         let nextX = layout.isVertical ? x : x + i
         let nextY = layout.isVertical ? y + i : y
@@ -780,8 +751,8 @@ function showGhostShip(sector) {
     for (let i = 0; i < layout.shipSize; i++) {
         let nextX = layout.isVertical ? x : x + i
         let nextY = layout.isVertical ? y + i : y
-        let nextSector = fields.me[nextX] && fields.me[nextX][nextY]
-        if (fields.me[nextX] && nextSector && nextSector.status != '1') nextSector.classList.add(`field__sector-dragover-${type}`)
+        let nextSector = nodes.fields.me[nextX] && nodes.fields.me[nextX][nextY]
+        if (nodes.fields.me[nextX] && nextSector && nextSector.status != '1') nextSector.classList.add(`field__sector-dragover-${type}`)
     }
 }
 
@@ -792,7 +763,7 @@ function showGhostShip(sector) {
 function placeShip(sector) {
     let x = sector.x
     let y = sector.y
-    let field = fields.me
+    let field = nodes.fields.me
     for (let i = 0; i < layout.shipSize; i++) {
         let nextX = layout.isVertical ? x : x + i
         let nextY = layout.isVertical ? y + i : y
@@ -815,7 +786,7 @@ function placeShip(sector) {
 function getShip(sector) {
     let oldX = sector.x
     let oldY = sector.y
-    let field = fields.me
+    let field = nodes.fields.me
     layout.shipSize = 1
     layout.wasVertical = false
     layout.shipStart = sector
@@ -845,7 +816,7 @@ function getShip(sector) {
         if (field[x][newY] && field[x][newY].status == '1') {
             layout.shipSize++
             layout.wasVertical = true
-            layout.shipStart = fields.me[x][newY]
+            layout.shipStart = nodes.fields.me[x][newY]
             clear(x, newY)
             return goUp(x, newY)
         } 
@@ -865,7 +836,7 @@ function getShip(sector) {
         newX = x - 1
         if (field[newX] && field[newX][y] && field[newX][y].status == '1') {
             layout.shipSize++
-            layout.shipStart = fields.me[newX][y]
+            layout.shipStart = nodes.fields.me[newX][y]
             clear(newX, y)
             return goLeft(newX, oldY)
         }
@@ -893,7 +864,7 @@ function checkAllShips() {
 function finishPlacing() {
     if (layout.isAllShips) {
         for (let i = 1; i < 10; i++) for (let j = 1; j < 10; j++) {
-            fields.me[i][j].draggable = false
+            nodes.fields.me[i][j].draggable = false
         }
         hide(nodes.finish)
         hide(nodes.fieldBlocker)
@@ -954,6 +925,38 @@ function run0to100 (callback, owner) {
  */
 function getRandom () {
     return Math.floor(Math.random() * Math.floor(9))
+}
+
+/** Returns the sector to the up if it exists. */
+function getUp(sector) {
+    let field = sector.parentNode
+    let newX = sector.x
+    let newY = sector.y - 1
+    return field[newX] && field[newX][newY] ? field[newX][newY] : false
+}
+
+/** Returns the sector to the down if it exists. */
+function getDown(sector) {
+    let field = sector.parentNode
+    let newX = sector.x
+    let newY = sector.y + 1
+    return field[newX] && field[newX][newY] ? field[newX][newY] : false
+}
+
+/** Returns the sector to the left if it exists. */
+function getLeft(sector) {
+    let field = sector.parentNode
+    let newX = sector.x - 1
+    let newY = sector.y 
+    return field[newX] && field[newX][newY] ? field[newX][newY] : false
+}
+
+/** Returns the sector to the right if it exists. */
+function getRight(sector) {
+    let field = sector.parentNode
+    let newX = sector.x + 1
+    let newY = sector.y
+    return field[newX] && field[newX][newY] ? field[newX][newY] : false
 }
 
 // *****===== END OF SERVICE =====*****
