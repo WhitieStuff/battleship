@@ -227,6 +227,10 @@ function refreshSector(i, j, owner) {
     newSector.y = j
     newSector.status = 0
     newSector.opened = 0
+    newSector.owner = owner
+
+    newSector.mark = mark
+
     field[i] = field[i] ? field[i] : {}
     field[i][j] = newSector
     //TODO: An object with CSS classes.
@@ -259,7 +263,7 @@ function createShip(size, owner) {
     for (let i = 0; i < size; i++) {
         let xi = horizontal ? x + i : x
         let yi = !horizontal ? y + i : y
-        markSector(xi, yi, owner, 1, false, noClass)
+        field[xi][yi].mark(1, false, noClass)
     }
     
     // Runs around the ship and marks sectors as 'next to the ship'.
@@ -267,23 +271,20 @@ function createShip(size, owner) {
         let xi = horizontal ? x + i : x + j
         let yi = horizontal ? y + j : y + i
         if (xi > 9 || yi > 9 || xi < 0 || yi < 0 || field[xi][yi].status) continue; 
-        markSector(xi, yi, owner, 4, false, true)
+        field[xi][yi].mark(4, false, true)
     }
 }
 
 /**
  * Marks the given sector as the given type.
  * 
- * @param {number} x Coordinate X.
- * @param {number} y Coordinate Y.
- * @param {string} owner Field owner (me/enemy).
- * @param {number} status The given status.
+ * @param {number} status 0 - empty, 1 - ship, 2 - hit, 3 - miss, 4 - next to the ship.
  * @param {boolean} opened Mark as opened if true.
  * @param {boolean} noClass Do not add class if true.
  */
-function markSector (x, y, owner, status, open, noClass) {
-    let field = fields[owner]
-    let sector = field[x][y]
+function mark (status, open, noClass) {
+    let sector = this
+    let owner = this.owner
 
     sector.status = status
     sector.opened = open
@@ -328,7 +329,7 @@ function shoot(sector, owner) {
     sector.opened = 1
     
     if (sector.status == 0 || sector.status == 4) {
-        markSector(x, y, owner, 3, true, false)
+        sector.mark(3, true, false)
         myMove = !myMove
         console.log(`%cMissed.\n`, color)
 
@@ -345,7 +346,7 @@ function shoot(sector, owner) {
             console.log(`%cEnemy hits a ship but skips the move because it's the easy mode.\n`, color)
             return shootRandom()
         }
-        markSector(x, y, owner, 2, true, false)
+        sector.mark(2, true, false)
         field.lastHits = {x, y}
         console.log(`%cHit.\n`, color)
 
@@ -380,7 +381,8 @@ function shootRandom() {
     let field = fields.me
     let x = getRandom()
     let y = getRandom()
-    if (field[x][y].opened) return shootRandom()
+    // Timeout neede because maximum callstack may be exceeded.
+    if (field[x][y].opened) return setTimeout(() => { shootRandom() }, 0)
     enemyMove(x, y)
 }
 
@@ -428,8 +430,6 @@ function checkDone(oldX, oldY, owner, makeHit) {
     let doneDown = false
     let isDone = false
 
-    oldX = parseInt(oldX)
-    oldY = parseInt(oldY)
     let newX = 11
     let newY = 11
 
@@ -542,13 +542,11 @@ function markDone(oldX, oldY, owner) {
     let noClass = owner == 'me'
     console.log('The whole ship is done.\n')
     let field = fields[owner]
-    oldX = parseInt(oldX)
-    oldY = parseInt(oldY)
     let isHit = (x, y) => field[x] && field[x][y] && field[x][y].status == 2
     let isUnknown = (x, y) => field[x] && field[x][y] && !field[x][y].opened
 
     let getAround = (x, y) => {
-        for (let i = x - 1; i <= x + 1; i++) for (let j = y - 1; j <= y + 1; j++) if (isUnknown(i, j)) markSector(i, j, owner, 4, true, noClass)
+        for (let i = x - 1; i <= x + 1; i++) for (let j = y - 1; j <= y + 1; j++) if (isUnknown(i, j)) field[i][j].mark(4, true, noClass)
     }
 
     let goRight = (x, y) => {
@@ -782,7 +780,7 @@ function showGhostShip(sector) {
     for (let i = 0; i < layout.shipSize; i++) {
         let nextX = layout.isVertical ? x : x + i
         let nextY = layout.isVertical ? y + i : y
-        let nextSector = fields.me[nextX][nextY]
+        let nextSector = fields.me[nextX] && fields.me[nextX][nextY]
         if (fields.me[nextX] && nextSector && nextSector.status != '1') nextSector.classList.add(`field__sector-dragover-${type}`)
     }
 }
@@ -798,7 +796,7 @@ function placeShip(sector) {
     for (let i = 0; i < layout.shipSize; i++) {
         let nextX = layout.isVertical ? x : x + i
         let nextY = layout.isVertical ? y + i : y
-        markSector(nextX, nextY, 'me', 1, false, false)
+        field[nextX][nextY].mark(1, false, false)
     }
 
     // Runs around the ship and marks sectors as 'next to the ship'.
@@ -806,7 +804,7 @@ function placeShip(sector) {
         let xi = !layout.isVertical ? x + i : x + j
         let yi = !layout.isVertical ? y + j : y + i
         if (xi > 9 || yi > 9 || xi < 0 || yi < 0 || field[xi][yi].status) continue; 
-        markSector(xi, yi, 'me', 4, false, true)
+        field[xi][yi].mark(4, false, true)
     }
 }
 
@@ -826,7 +824,7 @@ function getShip(sector) {
         // Runs around the ship and marks sectors as 'next to the ship'.
         for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
             if (field[x + i] && field[x + i][y + j]) setTimeout(() => {
-                markSector(x + i, y + j, 'me', 0, false, false)
+                field[x + i][y + j].mark(0, false, false)
             }, 5)
         }
     }
