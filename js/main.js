@@ -373,20 +373,18 @@ function shootRandom() {
  * @returns {boolean} Is the whole ship killed.
  */
 function checkDone(makeHit) {
-    let sector = this
-    let field = sector.parentNode
-    let oldX = sector.x
-    let oldY = sector.y
-    let owner = sector.owner
+    let oldSector = this
+    let field = oldSector.parentNode
+    let owner = oldSector.owner
 
     /**
      * Is the given sector unknown.
      */
-    let isUnknown = (x, y) => field[x] && field[x][y] && !field[x][y].opened
+    let isUnknown = (sector) => sector && !sector.opened
     /**
      * Is the given sector a hit ship.
      */
-    let isHit = (x, y) => field[x] && field[x][y] && field[x][y].status == 2
+    let isHit = (sector) => sector && sector.status == 2
     /**
      * Is the given ship the biggest one lost.
      */
@@ -412,6 +410,7 @@ function checkDone(makeHit) {
 
     let newX = 11
     let newY = 11
+    let newSector = null
 
     let makeDone = () => {
         let shipNodes = document.getElementsByClassName(`ship-${owner}-${length}`)
@@ -423,89 +422,83 @@ function checkDone(makeHit) {
         }
         field.lastHit = null
         field.shipsLost[length] = field.shipsLost[length] - 1
-        newX = 11
-        newY = 11
-        sector.markDone()
+        newSector = null
+        oldSector.markDone()
     }
 
 
-    let goRight = (x, y) => {
-        x++
-        if (isHit(x, y)) {
+    let goRight = (sector) => {
+        right = getRight(sector)
+        if (isHit(right)) {
             length++
             horizontal = true
-            return goRight(x, y)
+            return goRight(right)
         } else {
-            if (isUnknown(x, y)) {
-                newX = x
-                newY = y
+            if (isUnknown(right)) {
+                newSector = right
             } else {
                 doneRight = true
             }
-            return goLeft(oldX, oldY)
+            return goLeft(oldSector)
         }
     }
 
-    let goLeft = (x, y) => {
-        x--
-        if (isHit(x, y)) {
+    let goLeft = (sector) => {
+        left = getLeft(sector)
+        if (isHit(left)) {
             length++
             horizontal = true
-            return goLeft(x, y)
+            return goLeft(left)
         } else {
-            if (isUnknown(x, y)) {
-                newX = x
-                newY = y
+            if (isUnknown(left)) {
+                newSector = left
             } else {
                 doneLeft = true
             }
-            if (!horizontal) return goUp(oldX, oldY)
+            if (!horizontal) return goUp(oldSector)
         }
     }
 
-    let goUp = (x, y) => {
-        y--
-        if (isHit(x, y)) {
+    let goUp = (sector) => {
+        up = getUp(sector)
+        if (isHit(up)) {
             length++
             vertical = true
-            return goUp(x, y)
+            return goUp(up)
         } else {
-            if (isUnknown(x, y)) {
-                newX = x
-                newY = y
+            if (isUnknown(up)) {
+                newSector = up
             } else {
                 doneUp = true
             }
-            return goDown(oldX, oldY)
+            return goDown(oldSector)
         }
     }
 
-    let goDown = (x, y) => {
-        y++
-        if (isHit(x, y)) {
+    let goDown = (sector) => {
+        down = getDown(sector)
+        if (isHit(down)) {
             length++
             vertical = true
-            return goDown(x, y)
+            return goDown(down)
         } else {
-            if (isUnknown(x, y)) {
-                newX = x
-                newY = y
+            if (isUnknown(down)) {
+                newSector = down
             } else {
-                if (!isHit(x, y)) doneDown = true
+                if (!isHit(down)) doneDown = true
             }
         }
     }
 
-    goRight(oldX, oldY)
+    goRight(oldSector)
 
     if (isBiggest(length) || horizontal && doneRight && doneLeft || vertical && doneUp && doneDown || doneRight && doneLeft && doneUp && doneDown) {
         makeDone()
     }
 
     if (makeHit) {
-        console.log('\nEnemy shoots')
-        if (newX == 11) return shootRandom()
-        enemyMove(field[newX][newY])
+        if (!newSector) return shootRandom()
+        enemyMove(newSector)
     }
     
 }
@@ -701,7 +694,7 @@ function handleDragEnd(event, isNew) {
 }
 
 /**
- * Handles the drag over a field sectopr.
+ * Handles the drag over a field sector.
  * @param {Event} event The event of the drag over.
  */
 function handleDragEnter(event) {
@@ -932,6 +925,38 @@ function run0to100 (callback, owner) {
  */
 function getRandom () {
     return Math.floor(Math.random() * Math.floor(9))
+}
+
+/** Returns the sector to the up if it exists. */
+function getUp(sector) {
+    let field = sector.parentNode
+    let newX = sector.x
+    let newY = sector.y - 1
+    return field[newX] && field[newX][newY] ? field[newX][newY] : false
+}
+
+/** Returns the sector to the down if it exists. */
+function getDown(sector) {
+    let field = sector.parentNode
+    let newX = sector.x
+    let newY = sector.y + 1
+    return field[newX] && field[newX][newY] ? field[newX][newY] : false
+}
+
+/** Returns the sector to the left if it exists. */
+function getLeft(sector) {
+    let field = sector.parentNode
+    let newX = sector.x - 1
+    let newY = sector.y 
+    return field[newX] && field[newX][newY] ? field[newX][newY] : false
+}
+
+/** Returns the sector to the right if it exists. */
+function getRight(sector) {
+    let field = sector.parentNode
+    let newX = sector.x + 1
+    let newY = sector.y
+    return field[newX] && field[newX][newY] ? field[newX][newY] : false
 }
 
 // *****===== END OF SERVICE =====*****
