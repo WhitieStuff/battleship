@@ -1,163 +1,119 @@
 //0 - empty, 1 - ship, 2 - hit, 3 - miss, 4 - next to the ship.
 
-/**
- * Ships in the game.
- */
-let shipSizes = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
+
+// *****===== START OF NODES =====*****
+/** All needed nodes. */
+let nodes = {
+    /**
+     * Nodes of the fields.
+     * @property {Element} field.enemy The enemy's field.
+     * @property {Element} field.me My field.
+     */
+    fields: {
+        /** The enemy's field. */
+        enemy: document.getElementById('fieldEnemy'),
+        /** My field. */
+        me: document.getElementById('fieldMe')
+    },
+
+    /**
+     * Nodes of the ships containers.
+     * @property {Element} shipsLists.enemy The enemy's ships container.
+     * @property {Element} shipsLists.me My ships container.
+     */
+    shipsLists: {
+        /** The enemy's ships container. */
+        enemy: document.getElementById('shipsEnemy'),
+        /** My ships container. */
+        me: document.getElementById('shipsMe')
+    },
+
+    /**
+     * Collection of listed ships.
+     */
+    listedShips: {
+        /** The enemy's listed ships. */
+        enemy: document.getElementsByClassName('ship-enemy'),
+        /** My listed ships */
+        me: document.getElementsByClassName('ship-me')
+    },
+
+    /** Node of the listed ships block. Blocked when game started. */
+    listedShipsBlock: document.getElementById('shipsBlock'),
+
+    /** Node of the enemy's field blocker. Blocked while your ships not placed yet. */
+    fieldBlocker: document.getElementById('fieldBlocker'),
+    
+    /** Node of the enemy's field blocker with animation. Blocked while enemy making a move. */
+    animation: document.getElementById('animation'),
+
+    /** Node of the "New Game" button. */
+    newGame: document.getElementById('newGame'),
+
+    /** Node of the end-game blocker. */
+    endGame: document.getElementById('endGame'),
+
+    /** Node of the end-game message title. */
+    endGameTitle: document.getElementById('endGameTitle'), 
+    
+    /** Node of the rotation tip. */
+    tip: document.getElementById('tip'),
+
+    /** Node of the 'finish placing' button. */
+    finish: document.getElementById('finish'),
+    
+    /** Node of the game-mode select. */
+    mode: document.getElementById('mode'),
+   
+    /** Node of layout select. */
+    layout: document.getElementById('layout')
+}
+
+// *****===== END OF NODES =====*****
+
+// *****=====*****
+
+// *****===== START OF VARIABLES =====*****
 
 /**
- * Returns a sum of the two given numbers.
- * @param {*} sum Sum of previous numbers.
- * @param {*} current Current number.
- * @returns Sum of numbers.
+ * Fields in the game with all sectors info.
+ * @property {number} enemy Number of the enemy's sectors
  */
-let reducer = (sum, current) => sum + current
-
-/**
- * Possible statuses of a sector.
- */
-let statuses = ["empty", "ship", "hit", "miss", "next"]
-
-/**
- * Node of the enemy's field.
- * Node of your field.
- */
-let node_fields = {
-    enemy: document.getElementById('fieldEnemy'),
-    me: document.getElementById('fieldMe')
+ let fields = {
+    enemy: {shipSectors: 20},
+    me: {shipSectors: 20}
 }
 
 /**
- * Node of the enemy's ships container.
- * Node of your ships container.
- */
-let node_shipContainers = {
-    enemy: document.getElementById('shipsEnemy'),
-    me: document.getElementById('shipsMe')
-}
-
-/**
- * Node of the enemy's ships.
- * Node of your ships.
- */
-let node_ships = {
-    enemy: document.getElementsByClassName('ship-enemy'),
-    me: document.getElementsByClassName('ship-me')
-}
-
-/**
- * Node of field blocker.
- */
-let node_fieldBlocker = document.getElementById('fieldBlocker')
-
-node_fieldBlocker.addEventListener('click', () => {
-    let node = document.getElementsByClassName('field-container')[1]
-    node.classList.add('field_animated')
-    node_shipContainers.me.classList.add('field_animated')
-    setTimeout(() => {
-        node.classList.remove('field_animated')
-        node_shipContainers.me.classList.remove('field_animated')
-    }, 500)
-})
-
-/**
- * Node of field blocker with animation.
- */
-let node_animation = document.getElementById('animation')
-
-/**
- * Node of "New Game" button.
- */
-let node_newGame = document.getElementById('newGame')
-
-/**
- * Node of end-game popup.
- */
-let node_endGame = document.getElementById('endGame')
-
-/**
- * Node of end-game message title.
- */
-let node_endGameTitle = document.getElementById('endGameTitle')
-
-/**
- * Node of the rotation tip.
- */
-let node_tip = document.getElementById('tip')
-
-/**
- * Node of the finish placing button.
- */
-let node_finish = document.getElementById('finish')
-node_finish.addEventListener('click', event => finishPlacing(event))
-
-/**
- * Node of the rotate-area.
- */
-let node_shipsBlock = document.getElementById('shipsBlock')
-
-
-/**
- * Game mode. 0 - easy, 1 - hard.
- */
-let mode = localStorage.getItem('mode') ? localStorage.getItem('mode') : 0
-
-/**
- * Text names of the modes.
- */
-let modes = ['easy', 'hard']
-
-/**
- * Node of game-mode select.
- */
-let node_mode = document.getElementById('mode')
-node_mode.value = mode
-node_mode.addEventListener('change', (event) => {
-    mode = event.target.value
-    localStorage.setItem('mode', mode)
-    newGame()
-})
-
-
-
-/**
- * Layout mode. 0 - manual, 1 - auto.
- */
-let layout = localStorage.getItem('layout') ? localStorage.getItem('layout') : 0
-
-/**
- * Text names of the modes.
- */
-let layouts = ['manual', 'auto']
-
-/**
- * Node of layout select.
- */
-let node_layout = document.getElementById('layout')
-node_layout.value = layout
-node_layout.addEventListener('change', (event) => {
-    layout = event.target.value
-    localStorage.setItem('layout', layout)
-    newGame()
-})
-
-/**
- * Enemy's sectors.
- * Your sectors.
- */
-let fields = {
-    enemy: {shipSectors: shipSizes.reduce(reducer)},
-    me: {shipSectors: shipSizes.reduce(reducer)}
-}
-
-/**
- * Enemy's ships lost in current game.
- * Your ships lost in current game.
+ * Ships lost during the game.
+ * @property {object} enemy The enemy's ships lost during the game.
+ * @property {object} me My ships lost during the game.
  */
 let shipsLost = {
+    /** The enemy's ships lost during the game. */
     enemy: {4:1, 3:2, 2:3, 1:4},
+    /** My ships lost during the game. */
     me: {4:1, 3:2, 2:3, 1:4}
 }
+
+/** Ships in the game.  */
+let shipSizes = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
+
+/** Possible statuses of a sector. */
+let statuses = ["empty", "ship", "hit", "miss", "next"]
+
+/** Game mode. 0 - easy, 1 - hard. */
+let mode = localStorage.getItem('mode') ? localStorage.getItem('mode') : 0
+
+/** Text names of the modes. */
+let modes = ['easy', 'hard']
+
+/** Layout mode. 0 - manual, 1 - auto. */
+let layout = localStorage.getItem('layout') ? localStorage.getItem('layout') : 0
+
+/** Text names of the modes. */
+let layouts = ['manual', 'auto']
+
 
 /**
  * My-move flag.
@@ -215,6 +171,44 @@ let isDragOk
  */
 let shipStart
 
+// *****===== END OF VARIABLES =====*****
+
+// *****=====*****
+
+// *****===== START OF EVENT LISTENERS =====*****
+
+nodes.newGame.addEventListener('click', () => newGame())
+
+nodes.fieldBlocker.addEventListener('click', () => {
+    let node = document.getElementsByClassName('field-container')[1]
+    node.classList.add('field_animated')
+    nodes.shipsLists.me.classList.add('field_animated')
+    setTimeout(() => {
+        node.classList.remove('field_animated')
+        nodes.shipsLists.me.classList.remove('field_animated')
+    }, 500)
+})
+
+nodes.finish.addEventListener('click', event => finishPlacing(event))
+
+nodes.mode.addEventListener('change', event => {
+    mode = event.target.value
+    localStorage.setItem('mode', mode)
+    newGame()
+})
+
+nodes.layout.addEventListener('change', (event) => {
+    layout = event.target.value
+    localStorage.setItem('layout', layout)
+    newGame()
+})
+
+// *****===== END OF EVENT LISTENERS =====*****
+
+// *****=====*****
+
+
+
 
 /**
  * Starts a new game and redraws the fields.
@@ -225,19 +219,21 @@ function newGame() {
 
     
     if (layout == '0') {
-        node_fieldBlocker.classList.remove('hidden')
-        node_finish.classList.remove('hidden')
-        node_finish.classList.add('greyed-out')
-        node_shipsBlock.classList.add('hidden')
+        show(nodes.fieldBlocker)
+        show(nodes.finish)
+        hide(nodes.listedShipsBlock)
+        nodes.finish.classList.add('greyed-out')
     } else {
-        node_shipsBlock.classList.remove('hidden')
-        node_fieldBlocker.classList.add('hidden')
-        node_finish.classList.add('hidden')
+        hide(nodes.fieldBlocker)
+        hide(nodes.finish)
+        show(nodes.listedShipsBlock)
     }
     
 
-    node_shipContainers.me.innerHTML = ""
-    node_shipContainers.enemy.innerHTML = ""
+    nodes.shipsLists.me.innerHTML = ""
+    nodes.shipsLists.enemy.innerHTML = ""
+    nodes.layout.value = layout
+    nodes.mode.value = mode
 
 
     shipSizes.forEach(ship => {
@@ -246,8 +242,8 @@ function newGame() {
         createShip(ship, 'enemy')
         drawShip(ship, 'enemy')
     })
-    fields.enemy.shipSectors = shipSizes.reduce(reducer)
-    fields.me.shipSectors = shipSizes.reduce(reducer)
+    fields.enemy.shipSectors = 20
+    fields.me.shipSectors = 20
     shipsLost.enemy = {4:1, 3:2, 2:3, 1:4}
     shipsLost.me = {4:1, 3:2, 2:3, 1:4}
     lastHits.ememy = null
@@ -262,12 +258,12 @@ function newGame() {
      */
     let node_enemy_sectors = document.getElementsByClassName('field__sector-enemy')
     for (let i = 0; i < 100; i++) {
-        node_enemy_sectors[i].addEventListener('click', event => shoot(event, 'enemy'))
+        node_enemy_sectors[i].addEventListener('click', event => shoot(event.target, 'enemy'))
     }
 
-    node_endGameTitle.classList.add('hidden')
-    node_endGame.classList.add('hidden')
-    node_endGame.classList.remove('endGame-animation')
+    hide(nodes.endGameTitle)
+    hide(nodes.endGame)
+    nodes.endGame.classList.remove('endGame-animation')
 
     
     console.log(`%cNew game is started.\nGame mode: ${modes[mode]}.\n${skipHit} enemy's hits will be skipped.\nChosen layout: ${layouts[layout]}\n`, `color: green;`)
@@ -292,20 +288,22 @@ function run0to100 (callback, owner) {
  * @param {string} owner Field owner (me/enemy).
  */
 function refreshSector(i, j, owner) {
-    if (document.getElementById(`${owner}-${i}-${j}`)) document.getElementById(`${owner}-${i}-${j}`).parentNode.removeChild(document.getElementById(`${owner}-${i}-${j}`))
+    if (fields[owner][i] && fields[owner][i][j]) nodes.fields[owner].removeChild(fields[owner][i][j])
 
     let field = fields[owner]
-    let node = node_fields[owner]
+    let node = nodes.fields[owner]
     let newSector = document.createElement('div')
     newSector.classList.add('field__sector')
     newSector.classList.add(`field__sector-${owner}`)
     newSector.id = `${owner}-${i}-${j}`
     node.appendChild(newSector)
+
+    newSector.x = i
+    newSector.y = j
+    newSector.status = 0
+    newSector.opened = 0
     field[i] = field[i] ? field[i] : {}
-    field[i][j] = {}
-    field[i][j].status = 0
-    field[i][j].opened = 0
-    //TODO: Change field[i][j] to the sector node.
+    field[i][j] = newSector
     //TODO: An object with CSS classes.
 
     if (owner == 'me') newSector.addEventListener('dragenter', event => handleDragEnter(event))
@@ -360,10 +358,10 @@ function createShip(size, owner) {
  */
 function markSector (x, y, owner, status, open, noClass) {
     let field = fields[owner]
-    let sector = document.getElementById(`${owner}-${x}-${y}`)
+    let sector = field[x][y]
 
-    field[x][y].status = status
-    field[x][y].opened = open
+    sector.status = status
+    sector.opened = open
 
     if (open) sector.classList.remove('field__sector-enemy')
 
@@ -389,15 +387,13 @@ function markSector (x, y, owner, status, open, noClass) {
 
 /**
  * Hits the given sector.
- * @param {event} event Event of the click.
+ * @param {Element} sector Sector of the click.
  * @param {string} owner Field owner (me/enemy).
  */
-function shoot(event, owner) {
-    let id = event.target.id
-    let x = id.split('-')[1]
-    let y = id.split('-')[2]
+function shoot(sector, owner) {
+    let x = sector.x
+    let y = sector.y
     let field = fields[owner]
-    let sector = field[x][y]
     let color = owner == 'me' ? 'color: red;' : 'color: green;'
 
     console.log(`%cShot at ${owner}: ${x} ${y}`, color)
@@ -442,12 +438,11 @@ function shoot(event, owner) {
  * @param {number} y Coordinate Y.
  */
 function enemyMove(x, y) {
-    node_animation.classList.remove('hidden')
+    show(nodes.animation)
     setTimeout(() => {
-        node_animation.classList.add('hidden')
-        let event = {}
-        event.target = document.getElementById(`me-${x}-${y}`)
-        shoot(event, 'me')
+        hide(nodes.animation)
+        let sector = fields.me[x][y]
+        shoot(sector, 'me')
     }, 500)
     
     
@@ -682,15 +677,15 @@ function endGame(owner) {
 
     if (owner == 'me') {
         console.log('%c\nYou lost..\n', color)
-        node_endGameTitle.innerText = 'You lost..'
+        nodes.endGameTitle.innerText = 'You lost..'
     } else {
         console.log('%c\nYou won!\n', color)
-        node_endGameTitle.innerText = 'You won!'
+        nodes.endGameTitle.innerText = 'You won!'
     }
     openField(0, 0)
-    node_endGameTitle.classList.remove('hidden')
-    node_endGame.classList.remove('hidden')
-    node_endGame.classList.add('endGame-animation')
+    show(nodes.endGameTitle)
+    show(nodes.endGame)
+    nodes.endGame.classList.add('endGame-animation')
 }
 
 
@@ -709,11 +704,10 @@ function openField(x, y) {
     if (x > 9) return
     let field = fields['enemy']
     let sector = field[y][x]
-    let node_sector = document.getElementById(`enemy-${y}-${x}`)
 
     animation = setTimeout(() => {
-        if (sector.status == 1) node_sector.classList.add('field__sector-ship-enemy')
-        node_sector.classList.remove('field__sector-enemy')
+        if (sector.status == 1) sector.classList.add('field__sector-ship-enemy')
+        sector.classList.remove('field__sector-enemy')
 
         y++
         openField(x, y)
@@ -727,7 +721,7 @@ function openField(x, y) {
  * @param {string} owner Owner (me/enemy) of the ships.
  */
 function drawShip(size, owner) {
-    let container = node_shipContainers[owner]
+    let container = nodes.shipsLists[owner]
     let newShip = document.createElement('div')
     newShip.classList.add('ship')
     newShip.classList.add(`ship-${owner}`)
@@ -763,7 +757,7 @@ function drawShip(size, owner) {
  */
 function handleDragStart(event, isNew) {
     isDragOk = false
-    node_tip.classList.remove('hidden')
+    show(nodes.tip)
     let image
     if (isNew) {
         image = event.ctrlKey || event.altKey ? event.target.imageVertical : event.target.imageHorizontal
@@ -799,7 +793,7 @@ function handleDragEnd(event, isNew) {
             placeShip(shipStart)
         }
     }
-    node_tip.classList.add('hidden')
+    hide(nodes.tip)
     checkAllShips()
     
     run0to100(clearDragOverStyle)
@@ -821,19 +815,18 @@ function handleDragEnter(event) {
  * @param {Element} sector 
  */
 function clearDragOverStyle(x, y) {
-    let sector = document.getElementById(`me-${x}-${y}`)
+    let sector = fields.me[x][y]
     sector.classList.remove('field__sector-dragover-ok')
     sector.classList.remove('field__sector-dragover-bad')
 }
 
 /**
  * Cheks if the current place is ok for the ship.
- * @param {Element} sectorNode Node of the current drag-over sector.
+ * @param {Element} sector Node of the current drag-over sector.
  */
-function checkDragOk(sectorNode) {
-    let id = sectorNode.id
-    let x = parseInt(id.split('-')[1])
-    let y = parseInt(id.split('-')[2])
+function checkDragOk(sector) {
+    let x = sector.x
+    let y = sector.y
     let field = fields.me
     for (let i = 0; i < shipSize; i++) {
         let nextX = isVertical ? x : x + i
@@ -849,35 +842,33 @@ function checkDragOk(sectorNode) {
         
     }
 
-    shipStart = sectorNode
+    shipStart = sector
     return true
 }
 
 /**
  * Shows the hypothetical ship on the field.
- * @param {Element} sectorNode Node of the current drag-over sector.
+ * @param {Element} sector Node of the current drag-over sector.
  */
-function showGhostShip(sectorNode) {
-    let id = sectorNode.id
-    let x = parseInt(id.split('-')[1])
-    let y = parseInt(id.split('-')[2])
+function showGhostShip(sector) {
+    let x = sector.x
+    let y = sector.y
     let type = isDragOk ? 'ok' : 'bad'
     for (let i = 0; i < shipSize; i++) {
         let nextX = isVertical ? x : x + i
         let nextY = isVertical ? y + i : y
-        let nextSector = document.getElementById(`me-${nextX}-${nextY}`)
-        if (nextSector && !nextSector.status) nextSector.classList.add(`field__sector-dragover-${type}`)
+        let nextSector = fields.me[nextX][nextY]
+        if (fields.me[nextX] && nextSector && nextSector.status != '1') nextSector.classList.add(`field__sector-dragover-${type}`)
     }
 }
 
 /**
  * Places the ship on the field.
- * @param {Element} sectorNode Node of the current drag-over sector.
+ * @param {Element} sector Node of the current drag-over sector.
  */
-function placeShip(sectorNode) {
-    let id = sectorNode.id
-    let x = parseInt(id.split('-')[1])
-    let y = parseInt(id.split('-')[2])
+function placeShip(sector) {
+    let x = sector.x
+    let y = sector.y
     let field = fields.me
     for (let i = 0; i < shipSize; i++) {
         let nextX = isVertical ? x : x + i
@@ -896,17 +887,15 @@ function placeShip(sectorNode) {
 
 /**
  * Gets the ship from the field.
- * @param {Element} sectorNode Node of the current drag-start sector.
- * @param {boolean} remove Remove old ship if true.
+ * @param {Element} sector Node of the current drag-start sector.
  */
-function getShip(sectorNode, remove) {
-    let id = sectorNode.id
-    let oldX = parseInt(id.split('-')[1])
-    let oldY = parseInt(id.split('-')[2])
+function getShip(sector) {
+    let oldX = sector.x
+    let oldY = sector.y
     let field = fields.me
     shipSize = 1
     wasVertical = false
-    shipStart = sectorNode
+    shipStart = sector
 
     let clear = (x, y) => {
         // Runs around the ship and marks sectors as 'next to the ship'.
@@ -933,7 +922,7 @@ function getShip(sectorNode, remove) {
         if (field[x][newY] && field[x][newY].status == '1') {
             shipSize++
             wasVertical = true
-            shipStart = document.getElementById(`me-${x}-${newY}`)
+            shipStart = fields.me[x][newY]
             clear(x, newY)
             return goUp(x, newY)
         } 
@@ -953,7 +942,7 @@ function getShip(sectorNode, remove) {
         newX = x - 1
         if (field[newX] && field[newX][y] && field[newX][y].status == '1') {
             shipSize++
-            shipStart = document.getElementById(`me-${newX}-${y}`)
+            shipStart = fields.me[newX][y]
             clear(newX, y)
             return goLeft(newX, oldY)
         }
@@ -967,50 +956,69 @@ function getShip(sectorNode, remove) {
  * Checks if all the ships are placed on the field.
  */
 function checkAllShips() {
-    for (let i = 0; i < node_ships.me.length; i++) {
-        if (!node_ships.me[i].classList.contains('ship-moved')) return isAllShips = false
+    for (let i = 0; i < nodes.listedShips.me.length; i++) {
+        if (!nodes.listedShips.me[i].classList.contains('ship-moved')) return isAllShips = false
     }
     isAllShips = true
-    node_finish.classList.remove('greyed-out')
+    nodes.finish.classList.remove('greyed-out')
 }
 
 /**
  * Finishes placing and starts the game.
- * @param {Event} event The event of the 'Finish placing' button click.
+ * 
  */
-function finishPlacing(event) {
+function finishPlacing() {
     if (isAllShips) {
         for (let i = 1; i < 10; i++) for (let j = 1; j < 10; j++) {
-            document.getElementById(`me-${i}-${j}`).draggable = false
+            fields.me[i][j].draggable = false
         }
-        node_finish.classList.add('hidden')
-        node_fieldBlocker.classList.add('hidden')
-        node_endGame.classList.remove('hidden')
-        node_endGame.classList.add('endGame-animation')
+        hide(nodes.finish)
+        hide(nodes.fieldBlocker)
+        show(nodes.endGame)
+        nodes.endGame.classList.add('endGame-animation')
         isAllShips = false
-        for (let i = 0; i < node_ships.me.length; i++) {
-            node_ships.me[i].classList.remove('ship-draggable')
-            node_ships.me[i].classList.remove('ship-moved')
+        for (let i = 0; i < nodes.listedShips.me.length; i++) {
+            nodes.listedShips.me[i].classList.remove('ship-draggable')
+            nodes.listedShips.me[i].classList.remove('ship-moved')
         }
         return setTimeout(() => {
-            node_endGame.classList.add('hidden')
-            node_endGame.classList.remove('endGame-animation')
+            hide(nodes.endGame)
+            nodes.endGame.classList.remove('endGame-animation')
         }, 1000)
     } else {
         let node = document.getElementsByClassName('field-container')[1]
         node.classList.add('field_animated')
-        node_shipContainers.me.classList.add('field_animated')
+        nodes.shipsLists.me.classList.add('field_animated')
         return setTimeout(() => {
             node.classList.remove('field_animated')
-            node_shipContainers.me.classList.remove('field_animated')
+            nodes.shipsLists.me.classList.remove('field_animated')
         }, 500)
     }
 }
 
+// *****=====*****
 
-node_newGame.addEventListener('click', () => {
-    newGame()
-})
+// *****===== START OF SERVICE =====*****
+
+/** 
+ * Shows the given element by removing the 'hidden' class.
+ * @param {Element} node The element to show. 
+ */
+ function show(node) {
+    node.classList.remove('hidden')
+}
+
+/** 
+ * Hides the given element by adding the 'hidden' class.
+ * @param {Element} node The element to hide. 
+ */
+function hide(node) {
+    node.classList.add('hidden')
+}
+
+// *****===== END OF SERVICE =====*****
+
+
 
 window.oncontextmenu = () => {
     return false
