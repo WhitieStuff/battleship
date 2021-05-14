@@ -73,7 +73,7 @@ let fields = {
         /** Ships lost during the game. */
         shipsLost: {4:1, 3:2, 2:3, 1:4},
         /** Last success hits at the field. Needed to continue shooting around the last hit. */
-        lastHits: null
+        lastHit: null
     },
     me: {
         /** Number of ship-sectors lost in the current game. */
@@ -81,7 +81,7 @@ let fields = {
         /** Ships lost during the game. */
         shipsLost: {4:1, 3:2, 2:3, 1:4},
         /** Last success hits at the field. Needed to continue shooting around the last hit. */
-        lastHits: null
+        lastHit: null
     }
 }
 
@@ -177,8 +177,8 @@ function newGame() {
     fields.me.shipSectors = 20
     fields.enemy.shipsLost = {4:1, 3:2, 2:3, 1:4}
     fields.me.shipsLost = {4:1, 3:2, 2:3, 1:4}
-    fields.enemy.lastHits = null
-    fields.me.lastHits = null
+    fields.enemy.lastHit = null
+    fields.me.lastHit = null
 
     myMove = true
     skipHit = mode == "1" ? 0 : 3
@@ -230,6 +230,9 @@ function refreshSector(i, j, owner) {
     newSector.owner = owner
 
     newSector.mark = mark
+    newSector.shoot = shoot
+    newSector.checkDone = checkDone
+    newSector.markDone = markDone
 
     field[i] = field[i] ? field[i] : {}
     field[i][j] = newSector
@@ -311,15 +314,13 @@ function mark (status, open, noClass) {
     sector.classList.add(`field__sector-${statuses[status]}${postfix}`)
 }
 
-/**
- * Hits the given sector.
- * @param {Element} sector Sector of the click.
- * @param {string} owner Field owner (me/enemy).
- */
-function shoot(sector, owner) {
+/** Hits the given sector. */
+function shoot() {
+    let sector = this
     let x = sector.x
     let y = sector.y
-    let field = fields[owner]
+    owner = sector.owner
+    let field = sector.parentNode
     let color = owner == 'me' ? 'color: red;' : 'color: green;'
 
     console.log(`%cShot at ${owner}: ${x} ${y}`, color)
@@ -333,9 +334,9 @@ function shoot(sector, owner) {
         myMove = !myMove
         console.log(`%cMissed.\n`, color)
 
-        if (myMove && fields.me.lastHits) checkDone(fields.me.lastHits.x, fields.me.lastHits.y, 'me', false)
-        if (!myMove && fields.enemy.lastHits) checkDone(fields.enemy.lastHits.x, fields.enemy.lastHits.y, 'enemy', false)
-        if (!myMove && fields.me.lastHits) return checkDone(fields.me.lastHits.x, fields.me.lastHits.y, 'me', true)
+        if (myMove && fields.me.lastHit) fields.me.lastHit.checkDone(false)
+        if (!myMove && fields.enemy.lastHit) fields.enemy.lastHit.checkDone(false)
+        if (!myMove && fields.me.lastHit) return fields.me.lastHit.checkDone(true)
         if (!myMove) return shootRandom()
     }
 
@@ -347,13 +348,13 @@ function shoot(sector, owner) {
             return shootRandom()
         }
         sector.mark(2, true, false)
-        field.lastHits = {x, y}
+        field.lastHit = sector
         console.log(`%cHit.\n`, color)
 
 
         if (--field.shipSectors == 0) endGame(owner)
-        if (myMove) return checkDone(x, y, owner, false)
-        if (!myMove) return checkDone(x, y, owner, true)
+        if (myMove) return sector.checkDone(false)
+        if (!myMove) return sector.checkDone(true)
     }
 }
 
@@ -363,11 +364,10 @@ function shoot(sector, owner) {
  * @param {number} x Coordinate X.
  * @param {number} y Coordinate Y.
  */
-function enemyMove(x, y) {
+function enemyMove(sector) {
     show(nodes.animation)
     setTimeout(() => {
         hide(nodes.animation)
-        let sector = fields.me[x][y]
         shoot(sector, 'me')
     }, 500)
     
@@ -381,22 +381,23 @@ function shootRandom() {
     let field = fields.me
     let x = getRandom()
     let y = getRandom()
+    let sector = field[x][y]
     // Timeout neede because maximum callstack may be exceeded.
-    if (field[x][y].opened) return setTimeout(() => { shootRandom() }, 0)
-    enemyMove(x, y)
+    if (sector.opened) return setTimeout(() => { shootRandom() }, 0)
+    enemyMove(sector)
 }
 
 /**
  * Checks if the whole ship killed with the last hit.
- * 
- * @param {number} x Coordinate X.
- * @param {number} y Coordinate Y.
- * @param {string} owner Field owner (me/enemy).
  * @param {boolean} makeHit Makes next hit if true.
  * @returns {boolean} Is the whole ship killed.
  */
-function checkDone(oldX, oldY, owner, makeHit) {
-    let field = fields[owner]
+function checkDone(makeHit) {
+    let sector = this
+    let field = sector.parentNode
+    let oldX = sector.x
+    let oldY = sector.y
+    let owner = sector.owner
 
     /**
      * Is the given sector unknown.
@@ -428,13 +429,11 @@ function checkDone(oldX, oldY, owner, makeHit) {
     let vertical = false
     let doneUp = false
     let doneDown = false
-    let isDone = false
 
     let newX = 11
     let newY = 11
 
     let makeDone = () => {
-        isDone = true
         let shipNodes = document.getElementsByClassName(`ship-${owner}-${length}`)
         let marked = false
         for (let i = 0; i <= 3; i++) {
@@ -442,11 +441,11 @@ function checkDone(oldX, oldY, owner, makeHit) {
             shipNodes[i].classList.add(`ship-stroke`)
             marked = true
         }
-        field.lastHits = null
+        field.lastHit = null
         field.shipsLost[length] = field.shipsLost[length] - 1
         newX = 11
         newY = 11
-        markDone(oldX, oldY, owner)
+        sector.markDone()
     }
 
 
@@ -526,22 +525,21 @@ function checkDone(oldX, oldY, owner, makeHit) {
     if (makeHit) {
         console.log('\nEnemy shoots')
         if (newX == 11) return shootRandom()
-        enemyMove(newX, newY)
+        enemyMove(field[newX][newY])
     }
     
 }
 
-/**
- * Marks the given ship as killed and outlines it.
- * 
- * @param {number} oldX Coordinate X.
- * @param {number} oldY Coordinate Y.
- * @param {boolean} owner Field owner (me/enemy).
- */
-function markDone(oldX, oldY, owner) {
+/** Marks the given ship as killed and outlines it. */
+function markDone() {
+    let sector = this
+    let field = sector.parentNode
+    let owner = sector.owner
+    let oldX = sector.x
+    let oldY = sector.y
+
     let noClass = owner == 'me'
     console.log('The whole ship is done.\n')
-    let field = fields[owner]
     let isHit = (x, y) => field[x] && field[x][y] && field[x][y].status == 2
     let isUnknown = (x, y) => field[x] && field[x][y] && !field[x][y].opened
 
