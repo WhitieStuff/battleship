@@ -131,8 +131,8 @@ function newGame() {
     run0to100(refreshSector, 'me')
     run0to100(refreshSector, 'enemy')
     
-    nodes.mode.value = localStorage.getItem('mode') ? localStorage.getItem('mode') : 0
-    nodes.layout.value = localStorage.getItem('layout') ? localStorage.getItem('layout') : 0
+    nodes.mode.value = localStorage.getItem('mode') || 0
+    nodes.layout.value = localStorage.getItem('layout') || 0
     /** Game mode. 0 - easy, 1 - hard. */
     let mode = nodes.mode.value
     /** Layout mode. 0 - manual, 1 - auto. */
