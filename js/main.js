@@ -216,10 +216,14 @@ function refreshSector(i, j, owner) {
     newSector.shoot = shoot
     newSector.checkDone = checkDone
     newSector.markDone = markDone
+    newSector.showGhostShip = showGhostShip
+    newSector.getUp = getUp
+    newSector.getDown = getDown
+    newSector.getRight = getRight
+    newSector.getLeft = getLeft
 
     field[i] = field[i] ? field[i] : {}
     field[i][j] = newSector
-    //TODO: An object with CSS classes.
 
     if (owner == 'me') newSector.addEventListener('dragenter', event => handleDragEnter(event))
 }
@@ -370,12 +374,27 @@ function shootRandom() {
 /**
  * Checks if the whole ship killed with the last hit.
  * @param {boolean} makeHit Makes next hit if true.
- * @returns {boolean} Is the whole ship killed.
  */
 function checkDone(makeHit) {
     let oldSector = this
     let field = oldSector.parentNode
     let owner = oldSector.owner
+    /** Lenght of the hit part by now. */
+    let length = 1
+    /** Is the current ship horizontal. */
+    let horizontal = false
+    /** Is the current ship horizontal. */
+    let vertical = false
+    /** Done going to the right. */
+    let doneRight = false
+    /** Done going to the left. */
+    let doneLeft = false
+    /** Done going up. */
+    let doneUp = false
+    /** Done going down. */
+    let doneDown = false
+    /** Sector to hit next. */
+    let newSector = null
 
     /**
      * Is the given sector unknown.
@@ -396,21 +415,6 @@ function checkDone(makeHit) {
         return true
     }
 
-    /** 
-     * Lenght of the hit part by now. 
-     */
-    let length = 1
-
-    let horizontal = false
-    let doneRight = false
-    let doneLeft = false
-    let vertical = false
-    let doneUp = false
-    let doneDown = false
-
-    let newX = 11
-    let newY = 11
-    let newSector = null
 
     let makeDone = () => {
         let shipNodes = document.getElementsByClassName(`ship-${owner}-${length}`)
@@ -428,7 +432,7 @@ function checkDone(makeHit) {
 
 
     let goRight = (sector) => {
-        right = getRight(sector)
+        right = sector.getRight()
         if (isHit(right)) {
             length++
             horizontal = true
@@ -444,7 +448,7 @@ function checkDone(makeHit) {
     }
 
     let goLeft = (sector) => {
-        left = getLeft(sector)
+        left = sector.getLeft()
         if (isHit(left)) {
             length++
             horizontal = true
@@ -460,7 +464,7 @@ function checkDone(makeHit) {
     }
 
     let goUp = (sector) => {
-        up = getUp(sector)
+        up = sector.getUp()
         if (isHit(up)) {
             length++
             vertical = true
@@ -476,7 +480,7 @@ function checkDone(makeHit) {
     }
 
     let goDown = (sector) => {
-        down = getDown(sector)
+        down = sector.getDown()
         if (isHit(down)) {
             length++
             vertical = true
@@ -576,7 +580,7 @@ function endGame(owner) {
         console.log('%c\nYou won!\n', color)
         nodes.endGameTitle.innerText = 'You won!'
     }
-    openField(0, 0)
+    run0to100(openField, 'enemy')
     show(nodes.endGameTitle)
     show(nodes.endGame)
     nodes.endGame.classList.add('endGame-animation')
@@ -586,27 +590,14 @@ function endGame(owner) {
 
 /**
  * Opens the enemy's field.
-
  * @param {number} oldX Coordinate X.
  * @param {number} oldY Coordinate Y.
  */
 function openField(x, y) {
-    if (y > 9) {
-        x++
-        y = 0
-    }
-    if (x > 9) return
     let field = nodes.fields['enemy']
     let sector = field[y][x]
-
-    setTimeout(() => {
-        if (sector.status == 1) sector.classList.add('field__sector-ship-enemy')
-        sector.classList.remove('field__sector-enemy')
-
-        y++
-        openField(x, y)
-    }, 10)
-
+    if (sector.status == 1) sector.classList.add('field__sector-ship-enemy')
+    sector.classList.remove('field__sector-enemy')
 }
 
 /**
@@ -701,7 +692,7 @@ function handleDragEnter(event) {
     event.preventDefault()
     run0to100(clearDragOverStyle)
     layout.isDragOk = checkDragOk(event.target)
-    showGhostShip(event.target)
+    event.target.showGhostShip()
 }
 
 /**
@@ -741,18 +732,15 @@ function checkDragOk(sector) {
 }
 
 /**
- * Shows the hypothetical ship on the field.
- * @param {Element} sector Node of the current drag-over sector.
+ * Shows the hypothetical ship on the field starting at the given sector.
  */
-function showGhostShip(sector) {
-    let x = sector.x
-    let y = sector.y
+function showGhostShip() {
+    let sector = this
     let type = layout.isDragOk ? 'ok' : 'bad'
     for (let i = 0; i < layout.shipSize; i++) {
-        let nextX = layout.isVertical ? x : x + i
-        let nextY = layout.isVertical ? y + i : y
-        let nextSector = nodes.fields.me[nextX] && nodes.fields.me[nextX][nextY]
-        if (nodes.fields.me[nextX] && nextSector && nextSector.status != '1') nextSector.classList.add(`field__sector-dragover-${type}`)
+        if (!sector) return
+        if (sector && sector.status != '1') sector.classList.add(`field__sector-dragover-${type}`)
+        sector = layout.isVertical ? sector.getDown() : sector.getRight()
     }
 }
 
@@ -927,32 +915,36 @@ function getRandom () {
     return Math.floor(Math.random() * Math.floor(9))
 }
 
-/** Returns the sector to the up if it exists. */
-function getUp(sector) {
+/** Returns the sector to the up if it exists. Returns false if not. */
+function getUp() {
+    let sector = this
     let field = sector.parentNode
     let newX = sector.x
     let newY = sector.y - 1
     return field[newX] && field[newX][newY] ? field[newX][newY] : false
 }
 
-/** Returns the sector to the down if it exists. */
-function getDown(sector) {
+/** Returns the sector to the down if it exists. Returns false if not. */
+function getDown() {
+    let sector = this
     let field = sector.parentNode
     let newX = sector.x
     let newY = sector.y + 1
     return field[newX] && field[newX][newY] ? field[newX][newY] : false
 }
 
-/** Returns the sector to the left if it exists. */
-function getLeft(sector) {
+/** Returns the sector to the left if it exists. Returns false if not. */
+function getLeft() {
+    let sector = this
     let field = sector.parentNode
     let newX = sector.x - 1
     let newY = sector.y 
     return field[newX] && field[newX][newY] ? field[newX][newY] : false
 }
 
-/** Returns the sector to the right if it exists. */
-function getRight(sector) {
+/** Returns the sector to the right if it exists. Returns false if not. */
+function getRight() {
+    let sector = this
     let field = sector.parentNode
     let newX = sector.x + 1
     let newY = sector.y
