@@ -190,21 +190,20 @@ function newGame() {
 
 /**
  * Clears the given sector.
- * 
+ * @param {Element} sector The sector to refresh.
  * @param {number} i Coordinate X.
  * @param {number} j Coordinate Y.
  * @param {string} owner Field owner (me/enemy).
  */
-function refreshSector(i, j, owner) {
-    if (nodes.fields[owner][i] && nodes.fields[owner][i][j]) nodes.fields[owner].removeChild(nodes.fields[owner][i][j])
+function refreshSector(sector, i, j, owner) {
+    if (sector) sector.parentNode.removeChild(sector)
 
     let field = nodes.fields[owner]
-    let node = nodes.fields[owner]
     let newSector = document.createElement('div')
     newSector.classList.add('field__sector')
     newSector.classList.add(`field__sector-${owner}`)
     newSector.id = `${owner}-${i}-${j}`
-    node.appendChild(newSector)
+    field.appendChild(newSector)
 
     newSector.x = i
     newSector.y = j
@@ -590,12 +589,9 @@ function endGame(owner) {
 
 /**
  * Opens the enemy's field.
- * @param {number} oldX Coordinate X.
- * @param {number} oldY Coordinate Y.
+ * @param {Element} sector The sector to open.
  */
-function openField(x, y) {
-    let field = nodes.fields['enemy']
-    let sector = field[y][x]
+function openField(sector) {
     if (sector.status == 1) sector.classList.add('field__sector-ship-enemy')
     sector.classList.remove('field__sector-enemy')
 }
@@ -681,7 +677,7 @@ function handleDragEnd(event, isNew) {
     hide(nodes.tip)
     checkAllShips()
     
-    run0to100(clearDragOverStyle)
+    run0to100(clearDragOverStyle, 'me')
 }
 
 /**
@@ -690,17 +686,16 @@ function handleDragEnd(event, isNew) {
  */
 function handleDragEnter(event) {
     event.preventDefault()
-    run0to100(clearDragOverStyle)
+    run0to100(clearDragOverStyle, 'me')
     layout.isDragOk = checkDragOk(event.target)
     event.target.showGhostShip()
 }
 
 /**
- * 
- * @param {Element} sector 
+ * Cleares the sector's styles on drag-leave.
+ * @param {Element} sector The sector to clear style.
  */
-function clearDragOverStyle(x, y) {
-    let sector = nodes.fields.me[x][y]
+function clearDragOverStyle(sector) {
     sector.classList.remove('field__sector-dragover-ok')
     sector.classList.remove('field__sector-dragover-bad')
 }
@@ -716,7 +711,7 @@ function checkDragOk(sector) {
     for (let i = 0; i < layout.shipSize; i++) {
         let nextX = layout.isVertical ? x : x + i
         let nextY = layout.isVertical ? y + i : y
-        if (!field[nextX]) return false
+        if (!field[nextX] || !field[nextX][nextY]) return false
         // Runs around the ship and marks sectors as 'next to the ship'.
         for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
             if (field[nextX + i] && field[nextX + i][nextY + j]) {
@@ -904,7 +899,9 @@ function hide(node) {
  * @param {*} owner Field owner (me/enemy).
  */
 function run0to100 (callback, owner) {
-    for (let i = 0; i < 10; i++) for (let j = 0; j < 10; j++) callback(j, i, owner)
+    for (let i = 0; i < 10; i++) for (let j = 0; j < 10; j++) {
+        callback(nodes.fields[owner][j] && nodes.fields[owner][j][i] ? nodes.fields[owner][j][i] : false, j, i, owner)
+    }
 }
 
 /**
